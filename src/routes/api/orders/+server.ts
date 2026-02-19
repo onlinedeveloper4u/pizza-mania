@@ -102,8 +102,8 @@ export const POST: RequestHandler = async ({ request }) => {
         if (payload.payment_method === 'online') {
             try {
                 const { stripe } = await import('$lib/stripe.server');
-                const { PUBLIC_APP_URL } = await import('$env/static/public');
-                const appUrl = PUBLIC_APP_URL || 'http://localhost:5173';
+                const { env } = await import('$env/dynamic/public');
+                const appUrl = env.PUBLIC_APP_URL || 'http://localhost:5173';
 
                 const session = await stripe.checkout.sessions.create({
                     payment_method_types: ['card'],

@@ -4,7 +4,7 @@
     import { createClient } from '$lib/supabase/client';
     import type { Table } from '$lib/types';
     import { toast } from 'svelte-sonner';
-    import { PUBLIC_APP_URL } from '$env/static/public';
+    import { env } from '$env/dynamic/public';
 
     let tables = $state<Table[]>([]);
     let loading = $state(true);
@@ -56,7 +56,7 @@
     }
 
     function getTableQrUrl(table: Table): string {
-        const appUrl = PUBLIC_APP_URL || 'http://localhost:5173';
+        const appUrl = env.PUBLIC_APP_URL || 'http://localhost:5173';
         return `${appUrl}/table/${table.id}`;
     }
 </script>
@@ -101,9 +101,9 @@
 
 <!-- Add/Edit Modal -->
 {#if showModal}
-    <div class="modal" role="dialog" onclick={() => (showModal = false)} onkeydown={(e) => e.key === 'Escape' && (showModal = false)}>
+    <div class="modal" role="dialog" tabindex="-1" onclick={() => (showModal = false)} onkeydown={(e) => e.key === 'Escape' && (showModal = false)}>
         <!-- svelte-ignore a11y_click_events_have_key_events -->
-        <div class="modal-box" onclick={(e) => e.stopPropagation()}>
+        <div class="modal-box" role="document" onclick={(e) => e.stopPropagation()}>
             <h2>{editingTable ? 'Edit Table' : 'Add Table'}</h2>
             <div class="field">
                 <label class="label" for="tbl-num">Table Number *</label>
@@ -123,9 +123,9 @@
 
 <!-- QR Code Modal -->
 {#if showQrModal}
-    <div class="modal" role="dialog" onclick={() => (showQrModal = null)} onkeydown={(e) => e.key === 'Escape' && (showQrModal = null)}>
+    <div class="modal" role="dialog" tabindex="-1" onclick={() => (showQrModal = null)} onkeydown={(e) => e.key === 'Escape' && (showQrModal = null)}>
         <!-- svelte-ignore a11y_click_events_have_key_events -->
-        <div class="modal-box" onclick={(e) => e.stopPropagation()} style="text-align:center">
+        <div class="modal-box" role="document" onclick={(e) => e.stopPropagation()} style="text-align:center">
             <h2>QR Code — Table #{showQrModal.table_number}</h2>
             <p style="color:var(--color-text-secondary);font-size:var(--text-sm);margin-bottom:var(--space-4)">
                 Customers scan this to access the dine-in menu.
