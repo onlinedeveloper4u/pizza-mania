@@ -1,7 +1,7 @@
 <script lang="ts">
     import { onMount, onDestroy } from 'svelte';
     import { settings } from '$lib/stores/settings';
-    import { Truck, Store, Clock, ChefHat, CreditCard, Banknote, ArrowRight, ArrowLeft } from 'lucide-svelte';
+    import { Truck, Store, Clock, ChefHat, CreditCard, Banknote, ArrowRight, ArrowLeft, Volume2, VolumeX } from 'lucide-svelte';
     import { createClient } from '$lib/supabase/client';
     import type { OrderWithItems, OrderStatus } from '$lib/types';
     import { ORDER_STATUS_LABELS, ORDER_TYPE_LABELS, ORDER_STATUS_FLOW } from '$lib/constants';
