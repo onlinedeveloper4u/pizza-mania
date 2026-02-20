@@ -181,13 +181,14 @@
                                                 {ORDER_STATUS_LABELS[next]}
                                             </button>
                                         {/if}
+
+                                        {#if order.status === 'new'}
+                                            <button class="btn btn-ghost btn-sm" style="color:var(--color-danger)" onclick={() => updateStatus(order.id, 'cancelled')}>
+                                                Cancel
+                                            </button>
+                                        {/if}
+                                    </div>
                                 </svelte:fragment>
-                                    {#if order.status === 'new'}
-                                        <button class="btn btn-ghost btn-sm" style="color:var(--color-danger)" onclick={() => updateStatus(order.id, 'cancelled')}>
-                                            Cancel
-                                        </button>
-                                    {/if}
-                                </div>
                             </td>
                         </tr>
                     {:else}
