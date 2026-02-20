@@ -24,6 +24,8 @@
     cart.itemCount.subscribe(v => currentItemCount = v);
     cart.isDineIn.subscribe(v => currentIsDineIn = v);
 
+    let layout: 'grid' | 'list' = $state('grid');
+
     // Filtered items
     let filteredItems = $derived.by(() => {
         let items = menuItems;
@@ -118,8 +120,8 @@
             {/each}
         </div>
     {:else}
-        <!-- Search -->
-        <div class="search-bar">
+        <!-- Search & Layout Toggle -->
+        <div class="menu-controls">
             <div class="search-wrapper">
                 <Search size={18} color="var(--color-text-muted)" />
                 <input
@@ -129,6 +131,22 @@
                     bind:value={searchQuery}
                     oninput={() => { if (searchQuery.trim()) activeCategory = null; }}
                 />
+            </div>
+            <div class="layout-toggle">
+                <button 
+                    class={cn('toggle-btn', layout === 'grid' && 'active')} 
+                    onclick={() => layout = 'grid'}
+                    aria-label="Grid View"
+                >
+                    <div class="grid-icon"></div>
+                </button>
+                <button 
+                    class={cn('toggle-btn', layout === 'list' && 'active')} 
+                    onclick={() => layout = 'list'}
+                    aria-label="List View"
+                >
+                    <div class="list-icon"></div>
+                </button>
             </div>
         </div>
 
@@ -146,7 +164,7 @@
             </div>
         </div>
 
-        <!-- Menu Grid -->
+        <!-- Menu Grid/List -->
         {#if filteredItems.length === 0}
             <div class="empty-state">
                 <Search size={40} />
@@ -154,7 +172,7 @@
                 <p>Try a different search or category</p>
             </div>
         {:else}
-            <div class="menu-grid">
+            <div class={cn('menu-items-container', layout === 'grid' ? 'menu-grid' : 'menu-list')}>
                 {#each filteredItems as item}
                     <div
                         class="menu-card"
@@ -167,13 +185,13 @@
                             <img src={item.image_url} alt={item.name} class="menu-card-image" />
                         {:else}
                             <div class="menu-card-image-placeholder">
-                                <UtensilsCrossed size={32} color="rgba(255,255,255,0.1)" />
+                                <UtensilsCrossed size={layout === 'list' ? 24 : 32} color="rgba(255,255,255,0.1)" />
                             </div>
                         {/if}
                         <div class="menu-card-body">
                             <div class="menu-card-name">{item.name}</div>
                             {#if item.description}
-                                <div class="menu-card-desc">{item.description}</div>
+                                <div class="menu-card-desc" class:list-desc={layout === 'list'}>{item.description}</div>
                             {/if}
                             <div class="menu-card-footer">
                                 <div class="menu-card-price">{formatPrice(item.price)}</div>
@@ -206,18 +224,20 @@
     {#if selectedItem}
         <div class="modal-overlay" role="button" tabindex="-1" onclick={() => selectedItem = null} onkeydown={(e) => e.key === 'Escape' && (selectedItem = null)}>
             <div class="modal-sheet" role="dialog" onclick={(e) => e.stopPropagation()} onkeydown={() => {}}>
-                <div class="sheet-handle"></div>
-                <button class="modal-close" onclick={() => selectedItem = null}>
-                    <X size={18} />
-                </button>
-
-                {#if selectedItem.image_url}
-                    <img src={selectedItem.image_url} alt={selectedItem.name} class="modal-image" />
-                {:else}
-                    <div class="modal-image-placeholder">
-                        <UtensilsCrossed size={48} color="rgba(255,255,255,0.1)" />
-                    </div>
-                {/if}
+                <!-- Sticky Header -->
+                <div class="modal-header-sticky">
+                    <div class="sheet-handle"></div>
+                    <button class="modal-close" onclick={() => selectedItem = null}>
+                        <X size={18} />
+                    </button>
+                    {#if selectedItem.image_url}
+                        <img src={selectedItem.image_url} alt={selectedItem.name} class="modal-image" />
+                    {:else}
+                        <div class="modal-image-placeholder">
+                            <UtensilsCrossed size={48} color="rgba(255,255,255,0.1)" />
+                        </div>
+                    {/if}
+                </div>
 
                 <div class="modal-body">
                     <div class="modal-name">{selectedItem.name}</div>
@@ -226,65 +246,74 @@
                     {/if}
                     <div class="modal-price">{formatPrice(modalPrice)}</div>
 
-                    <!-- Options -->
+                    <div class="modal-sections-divider"></div>
+
+                    <!-- Options (Size, etc. - Moved to top of body) -->
                     {#if selectedItem.options}
-                        {#each selectedItem.options as option}
-                            <div class="option-group">
-                                <div class="option-group-title">
-                                    <span>{option.name}</span>
-                                    {#if option.required}
-                                        <span class="option-required">Required</span>
-                                    {/if}
-                                </div>
-                                {#each option.choices as choice}
-                                    <div
-                                        class={cn('option-choice', isChoiceSelected(option.name, choice.name) && 'option-choice-selected')}
-                                        role="button"
-                                        tabindex="0"
-                                        onclick={() => handleOptionChange(option, choice.name)}
-                                        onkeydown={(e) => e.key === 'Enter' && handleOptionChange(option, choice.name)}
-                                    >
-                                        <span class="option-choice-name">
-                                            {#if isChoiceSelected(option.name, choice.name)}
-                                                <Check size={14} color="var(--color-primary)" />
-                                            {/if}
-                                            {choice.name}
-                                        </span>
-                                        {#if choice.price_addition > 0}
-                                            <span class="option-choice-price">+{formatPrice(choice.price_addition)}</span>
+                        <div class="modal-section">
+                            {#each selectedItem.options as option}
+                                <div class="option-group">
+                                    <div class="option-group-title">
+                                        <span>{option.name}</span>
+                                        {#if option.required}
+                                            <span class="option-required">Required</span>
                                         {/if}
                                     </div>
-                                {/each}
-                            </div>
-                        {/each}
+                                    {#each option.choices as choice}
+                                        <div
+                                            class={cn('option-choice', isChoiceSelected(option.name, choice.name) && 'option-choice-selected')}
+                                            role="button"
+                                            tabindex="0"
+                                            onclick={() => handleOptionChange(option, choice.name)}
+                                            onkeydown={(e) => e.key === 'Enter' && handleOptionChange(option, choice.name)}
+                                        >
+                                            <span class="option-choice-name">
+                                                {#if isChoiceSelected(option.name, choice.name)}
+                                                    <Check size={14} color="var(--color-primary)" />
+                                                {/if}
+                                                {choice.name}
+                                            </span>
+                                            {#if choice.price_addition > 0}
+                                                <span class="option-choice-price">+{formatPrice(choice.price_addition)}</span>
+                                            {/if}
+                                        </div>
+                                    {/each}
+                                </div>
+                            {/each}
+                        </div>
                     {/if}
 
-                    <!-- Quantity -->
-                    <div class="quantity-row">
-                        <span class="label" style="margin-bottom: 0;">Quantity</span>
-                        <div class="quantity-controls">
-                            <button class="quantity-btn" onclick={() => quantity = Math.max(1, quantity - 1)}>
-                                <Minus size={16} />
-                            </button>
-                            <span class="quantity-value">{quantity}</span>
-                            <button class="quantity-btn" onclick={() => quantity++}>
-                                <Plus size={16} />
-                            </button>
+                    <div class="modal-sections-divider"></div>
+
+                    <!-- Quantity & Instructions -->
+                    <div class="modal-section">
+                        <div class="quantity-row">
+                            <span class="label" style="margin-bottom: 0;">Quantity</span>
+                            <div class="quantity-controls">
+                                <button class="quantity-btn" onclick={() => quantity = Math.max(1, quantity - 1)}>
+                                    <Minus size={16} />
+                                </button>
+                                <span class="quantity-value">{quantity}</span>
+                                <button class="quantity-btn" onclick={() => quantity++}>
+                                    <Plus size={16} />
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="notes-field">
+                            <label class="label">Special Instructions</label>
+                            <textarea
+                                class="input"
+                                placeholder="Any special requests?"
+                                bind:value={notes}
+                                rows="2"
+                            ></textarea>
                         </div>
                     </div>
+                </div>
 
-                    <!-- Notes -->
-                    <div class="notes-field">
-                        <label class="label">Special Instructions</label>
-                        <textarea
-                            class="input"
-                            placeholder="Any special requests?"
-                            bind:value={notes}
-                            rows="2"
-                        ></textarea>
-                    </div>
-
-                    <!-- Add Button -->
+                <!-- Sticky Footer -->
+                <div class="modal-footer-sticky">
                     <button class="btn btn-primary btn-lg add-to-cart-btn" onclick={handleAddToCart}>
                         Add to Cart — {formatPrice(modalPrice * quantity)}
                     </button>
@@ -303,6 +332,50 @@
     .menu-page-dinein {
         padding-top: calc(var(--header-height) + 32px + var(--space-4));
     }
+
+    /* Controls & Layout Toggle */
+    .menu-controls {
+        display: flex;
+        align-items: center;
+        gap: var(--space-4);
+        padding: 0 var(--space-4) var(--space-3);
+    }
+
+    .menu-controls .search-wrapper {
+        flex: 1;
+    }
+
+    .layout-toggle {
+        display: flex;
+        background: var(--color-bg-tertiary);
+        padding: 2px;
+        border-radius: var(--radius-lg);
+        border: 1px solid var(--color-border);
+    }
+
+    .toggle-btn {
+        width: 36px;
+        height: 36px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: var(--radius-md);
+        color: var(--color-text-muted);
+        transition: all var(--transition-fast);
+        background: transparent;
+    }
+
+    .toggle-btn.active {
+        background: var(--color-bg-secondary);
+        color: var(--color-primary);
+        box-shadow: var(--shadow-sm);
+    }
+
+    .grid-icon { width: 14px; height: 14px; border: 2px solid currentColor; display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; gap: 2px; }
+    .grid-icon::before, .grid-icon::after { content: ''; background: currentColor; }
+    
+    .list-icon { width: 14px; height: 14px; border-top: 2px solid currentColor; border-bottom: 2px solid currentColor; position: relative; }
+    .list-icon::before { content: ''; position: absolute; left: 0; right: 0; top: 50%; height: 2px; background: currentColor; transform: translateY(-50%); }
 
     /* Search */
     .search-bar {
@@ -387,12 +460,75 @@
         border-color: var(--color-primary) !important;
     }
 
-    /* Menu Grid */
+    /* Menu Grid & List */
+    .menu-items-container {
+        padding: var(--space-4);
+    }
+
     .menu-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-        gap: var(--space-4);
-        padding: var(--space-4);
+        grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+        gap: var(--space-3);
+    }
+
+    .menu-list {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-3);
+        max-width: 800px;
+        margin: 0 auto;
+    }
+
+    .menu-grid .menu-card {
+        max-width: none;
+        justify-self: stretch;
+        width: 100%;
+    }
+
+    .menu-grid .menu-card-body {
+        padding: var(--space-3);
+    }
+
+    .menu-grid .menu-card-name {
+        font-size: var(--text-sm);
+        margin-bottom: 0px;
+    }
+
+    .menu-grid .menu-card-desc {
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        font-size: var(--text-xs);
+        color: var(--color-text-secondary);
+        margin-bottom: var(--space-2);
+        line-height: var(--leading-tight);
+    }
+
+    .menu-grid .menu-card-price {
+        font-size: var(--text-base);
+    }
+
+    .menu-grid .add-btn {
+        width: 32px;
+        height: 32px;
+    }
+
+    @media (min-width: 769px) {
+        .menu-grid {
+            grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+            gap: var(--space-6);
+        }
+        .menu-grid .menu-card-name {
+            font-size: var(--text-base);
+            margin-bottom: var(--space-1);
+        }
+        .menu-grid .menu-card-desc {
+            display: -webkit-box;
+        }
+        .menu-grid .menu-card-price {
+            font-size: var(--text-lg);
+        }
     }
 
     .menu-card {
@@ -403,6 +539,14 @@
         transition: all var(--transition-base);
         cursor: pointer;
         -webkit-tap-highlight-color: transparent;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .menu-list .menu-card {
+        flex-direction: row;
+        align-items: center;
+        height: 100px;
     }
 
     .menu-card:hover {
@@ -420,6 +564,12 @@
         object-fit: cover;
     }
 
+    .menu-list .menu-card-image {
+        width: 100px;
+        height: 100%;
+        aspect-ratio: 1/1;
+    }
+
     .menu-card-image-placeholder {
         width: 100%;
         aspect-ratio: 16/10;
@@ -429,7 +579,23 @@
         justify-content: center;
     }
 
-    .menu-card-body { padding: var(--space-4); }
+    .menu-list .menu-card-image-placeholder {
+        width: 100px;
+        height: 100%;
+        aspect-ratio: 1/1;
+    }
+
+    .menu-card-body { 
+        padding: var(--space-4); 
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .menu-list .menu-card-body {
+        padding: var(--space-3) var(--space-4);
+        justify-content: center;
+    }
 
     .menu-card-name {
         font-size: var(--text-base);
@@ -448,16 +614,32 @@
         overflow: hidden;
     }
 
+    .menu-list .menu-card-desc {
+        display: -webkit-box;
+        -webkit-line-clamp: 1;
+        margin-bottom: var(--space-2);
+        font-size: var(--text-xs);
+    }
+
     .menu-card-footer {
         display: flex;
         align-items: center;
         justify-content: space-between;
+        margin-top: auto;
+    }
+
+    .menu-list .menu-card-footer {
+        margin-top: 0;
     }
 
     .menu-card-price {
         font-size: var(--text-lg);
         font-weight: var(--weight-bold);
         color: var(--color-primary);
+    }
+
+    .menu-list .menu-card-price {
+        font-size: var(--text-base);
     }
 
     .add-btn {
@@ -472,6 +654,11 @@
         transition: all var(--transition-base);
         box-shadow: var(--shadow-sm), var(--shadow-glow-primary);
         -webkit-tap-highlight-color: transparent;
+    }
+
+    .menu-list .add-btn {
+        width: 32px;
+        height: 32px;
     }
 
     .add-btn:active {
@@ -494,19 +681,51 @@
         border-top-left-radius: var(--radius-2xl);
         border-top-right-radius: var(--radius-2xl);
         width: 100%;
-        max-height: 90dvh;
-        overflow-y: auto;
+        max-height: 90vh; /* Changed from 90dvh for better compatibility */
+        display: flex;
+        flex-direction: column;
         animation: slideUp 0.3s ease-out;
         position: relative;
     }
 
+    /* Sticky Header */
+    .modal-header-sticky {
+        position: relative;
+        flex-shrink: 0;
+        background: var(--color-bg-secondary);
+        z-index: 2;
+        border-top-left-radius: inherit;
+        border-top-right-radius: inherit;
+        overflow: hidden;
+    }
+
     .sheet-handle {
+        position: absolute;
+        top: var(--space-3);
+        left: 50%;
+        transform: translateX(-50%);
         width: 40px;
         height: 4px;
         background: var(--color-text-muted);
         border-radius: var(--radius-full);
-        margin: var(--space-3) auto var(--space-1);
         opacity: 0.5;
+        z-index: 3;
+    }
+
+    .modal-close {
+        position: absolute;
+        top: var(--space-4);
+        right: var(--space-4);
+        width: 36px;
+        height: 36px;
+        border-radius: var(--radius-full);
+        background: rgba(0, 0, 0, 0.5);
+        backdrop-filter: blur(10px);
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 3;
     }
 
     .modal-image {
@@ -524,42 +743,50 @@
         justify-content: center;
     }
 
-    .modal-body { padding: var(--space-5); }
+    .modal-body { 
+        padding: var(--space-5); 
+        overflow-y: auto;
+        flex: 1;
+    }
+
+    .modal-section {
+        margin-bottom: var(--space-6);
+    }
+
+    .modal-sections-divider {
+        height: 1px;
+        background: var(--color-border);
+        margin: var(--space-4) 0;
+        opacity: 0.5;
+    }
 
     .modal-name {
         font-size: var(--text-xl);
         font-weight: var(--weight-bold);
-        margin-bottom: var(--space-2);
+        margin-bottom: var(--space-1);
     }
 
     .modal-desc {
         font-size: var(--text-sm);
         color: var(--color-text-secondary);
         line-height: var(--leading-relaxed);
-        margin-bottom: var(--space-4);
+        margin-bottom: var(--space-2);
     }
 
     .modal-price {
         font-size: var(--text-lg);
         font-weight: var(--weight-bold);
         color: var(--color-primary);
-        margin-bottom: var(--space-5);
+        margin-bottom: var(--space-2);
     }
 
-    .modal-close {
-        position: absolute;
-        top: var(--space-4);
-        right: var(--space-4);
-        width: 36px;
-        height: 36px;
-        border-radius: var(--radius-full);
-        background: rgba(0, 0, 0, 0.5);
-        backdrop-filter: blur(10px);
-        color: white;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        z-index: 1;
+    /* Sticky Footer */
+    .modal-footer-sticky {
+        padding: var(--space-4) var(--space-5) calc(var(--space-4) + env(safe-area-inset-bottom, 0));
+        background: var(--color-bg-secondary);
+        border-top: 1px solid var(--color-border);
+        flex-shrink: 0;
+        z-index: 2;
     }
 
     .option-group { margin-bottom: var(--space-5); }
@@ -617,7 +844,7 @@
         display: flex;
         align-items: center;
         justify-content: space-between;
-        margin-bottom: var(--space-5);
+        margin-bottom: var(--space-4);
     }
 
     .quantity-controls {
@@ -652,7 +879,7 @@
         text-align: center;
     }
 
-    .notes-field { margin-bottom: var(--space-5); }
+    .notes-field { margin-bottom: var(--space-2); }
 
     .add-to-cart-btn {
         width: 100%;
@@ -695,7 +922,7 @@
             margin: 0 auto;
         }
 
-        .search-bar {
+        .menu-controls {
             padding: 0 var(--space-6) var(--space-4);
         }
 
@@ -703,8 +930,11 @@
             padding: 0 var(--space-6);
         }
 
-        .menu-grid {
+        .menu-items-container {
             padding: var(--space-4) var(--space-6);
+        }
+
+        .menu-grid {
             grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
             gap: var(--space-6);
         }
@@ -727,6 +957,12 @@
             max-width: 560px;
             border-radius: var(--radius-2xl);
             animation: scaleIn var(--transition-spring);
+            height: 80vh;
+        }
+
+        .modal-header-sticky {
+            border-top-left-radius: var(--radius-2xl);
+            border-top-right-radius: var(--radius-2xl);
         }
 
         .sheet-handle {

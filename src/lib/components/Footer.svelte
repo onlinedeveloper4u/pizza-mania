@@ -28,7 +28,8 @@
             <h4>Quick Links</h4>
             <ul>
                 <li><a href="/menu">Menu</a></li>
-                <li><a href="/contact">Contact</a></li>
+                <li><a href="/offers">Offers</a></li>
+                <li><a href="/order">Track Order</a></li>
             </ul>
         </div>
         <div class="footer-links">

@@ -5,7 +5,7 @@ import { generateTrackingToken } from '$lib/utils';
 import type { CreateOrderPayload } from '$lib/types';
 import { DELIVERY_FEE } from '$lib/constants';
 
-export const POST: RequestHandler = async ({ request }) => {
+export const POST: RequestHandler = async ({ request, url }) => {
     try {
         const payload: CreateOrderPayload = await request.json();
 
@@ -102,8 +102,7 @@ export const POST: RequestHandler = async ({ request }) => {
         if (payload.payment_method === 'online') {
             try {
                 const { stripe } = await import('$lib/stripe.server');
-                const { env } = await import('$env/dynamic/public');
-                const appUrl = env.PUBLIC_APP_URL || 'http://localhost:5173';
+                const appUrl = url.origin;
 
                 const session = await stripe.checkout.sessions.create({
                     payment_method_types: ['card'],

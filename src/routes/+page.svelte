@@ -1,11 +1,24 @@
 <script lang="ts">
     import { goto } from '$app/navigation';
-    import { Truck, Store, Clock, Star, Ticket } from 'lucide-svelte';
+    import { Truck, Store, Clock, Ticket, Search } from 'lucide-svelte';
     import { cart } from '$lib/stores/cart';
     import type { OrderType } from '$lib/types';
+    import LocationModal from '$lib/components/LocationModal.svelte';
+
+    let showLocationModal = $state(false);
 
     function selectOrderType(type: OrderType) {
+        if (type === 'delivery') {
+            showLocationModal = true;
+            return;
+        }
         cart.setOrderType(type);
+        goto('/menu');
+    }
+
+    function handleLocationConfirm(data: any) {
+        // Here we could store the address in the cart or a separate store
+        cart.setOrderType('delivery');
         goto('/menu');
     }
 </script>
@@ -56,19 +69,20 @@
             </button>
         </div>
 
-        <!-- Offers Link -->
-        <a href="/offers" class="offers-link">
-            <Ticket size={18} />
-            <span>View Special Offers</span>
-        </a>
+        <!-- Home Actions -->
+        <div class="home-actions">
+            <a href="/offers" class="action-link offers">
+                <Ticket size={18} />
+                <span>View Special Offers</span>
+            </a>
+            <a href="/order" class="action-link track">
+                <Search size={18} />
+                <span>Track Order</span>
+            </a>
+        </div>
 
         <!-- Info badges -->
         <div class="home-badges">
-            <div class="badge">
-                <Star size={14} color="var(--color-gold)" />
-                <span>4.9 Rating</span>
-            </div>
-            <div class="badge-dot"></div>
             <div class="badge">
                 <span>Pizza • Pasta • Breakfast</span>
             </div>
@@ -78,6 +92,11 @@
             Dining in? Scan the <strong>QR code</strong> at your table
         </p>
     </div>
+
+    <LocationModal 
+        bind:show={showLocationModal} 
+        onConfirm={handleLocationConfirm}
+    />
 </div>
 
 <style>
@@ -88,7 +107,7 @@
         align-items: center;
         justify-content: center;
         padding: var(--space-6);
-        overflow: hidden;
+        overflow-y: auto;
     }
 
     .home-bg {
@@ -222,23 +241,47 @@
         white-space: nowrap;
     }
 
-    .offers-link {
+    .home-actions {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-3);
+        width: 100%;
+        margin-bottom: var(--space-8);
+    }
+
+    .action-link {
         display: flex;
         align-items: center;
+        justify-content: center;
         gap: var(--space-2);
-        color: var(--color-accent);
         font-weight: var(--weight-medium);
         font-size: var(--text-sm);
         text-decoration: none;
-        margin-bottom: var(--space-6);
-        background: rgba(230, 57, 70, 0.1);
         padding: var(--space-3) var(--space-5);
         border-radius: var(--radius-full);
         transition: all var(--transition-fast);
+        width: 100%;
     }
 
-    .offers-link:hover {
+    .action-link.offers {
+        color: var(--color-accent);
+        background: rgba(230, 57, 70, 0.1);
+    }
+
+    .action-link.offers:hover {
         background: rgba(230, 57, 70, 0.2);
+        transform: translateY(-1px);
+    }
+
+    .action-link.track {
+        color: var(--color-text-secondary);
+        background: var(--color-bg-tertiary);
+        border: 1px solid var(--color-border);
+    }
+
+    .action-link.track:hover {
+        background: var(--color-bg-hover);
+        border-color: var(--color-border-hover);
         transform: translateY(-1px);
     }
 
@@ -300,6 +343,16 @@
 
         .home-content {
             max-width: 600px;
+        }
+
+        .home-actions {
+            flex-direction: row;
+            justify-content: center;
+        }
+
+        .action-link {
+            width: auto;
+            min-width: 200px;
         }
     }
 </style>

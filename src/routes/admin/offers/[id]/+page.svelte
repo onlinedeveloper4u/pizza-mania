@@ -5,6 +5,7 @@
     import { createClient } from '$lib/supabase/client';
     import { ArrowLeft, Save, Plus, Trash2, GripVertical } from 'lucide-svelte';
     import { toast } from 'svelte-sonner';
+    import ImageUpload from '$lib/components/ImageUpload.svelte';
 
     const supabase = createClient();
     const dealId = $page.params.id;
@@ -173,10 +174,7 @@
                     </div>
                 </div>
                 
-                 <div class="field">
-                    <label class="label">Image URL</label>
-                    <input class="input" bind:value={deal.image_url} placeholder="/images/..." />
-                </div>
+                 <ImageUpload bind:value={deal.image_url} label="Deal Image" path="deals" />
 
                  <div class="field row-field">
                     <input type="checkbox" bind:checked={deal.is_active} id="active" />

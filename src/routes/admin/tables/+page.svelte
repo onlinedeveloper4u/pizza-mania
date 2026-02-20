@@ -4,7 +4,6 @@
     import { createClient } from '$lib/supabase/client';
     import type { Table } from '$lib/types';
     import { toast } from 'svelte-sonner';
-    import { env } from '$env/dynamic/public';
 
     let tables = $state<Table[]>([]);
     let loading = $state(true);
@@ -56,7 +55,7 @@
     }
 
     function getTableQrUrl(table: Table): string {
-        const appUrl = env.PUBLIC_APP_URL || 'http://localhost:5173';
+        const appUrl = typeof window !== 'undefined' ? window.location.origin : '';
         return `${appUrl}/table/${table.id}`;
     }
 </script>

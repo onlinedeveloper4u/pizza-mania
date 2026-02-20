@@ -39,6 +39,12 @@
     };
 
     onMount(async () => {
+        // Clear cart if returning from successful payment
+        const paymentStatus = $page.url.searchParams.get('payment');
+        if (paymentStatus === 'success') {
+            cart.clearCart();
+        }
+
         const supabase = createClient();
         const { data, error: fetchError } = await supabase
             .from('orders')

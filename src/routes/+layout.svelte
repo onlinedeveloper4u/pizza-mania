@@ -30,9 +30,4 @@
 {/if}
 
 <style>
-    @media (max-width: 768px) {
-        .app-footer {
-            display: none;
-        }
-    }
 </style>

@@ -6,6 +6,8 @@
     import { formatPrice, cn } from '$lib/utils';
     import { toast } from 'svelte-sonner';
 
+    import ImageUpload from '$lib/components/ImageUpload.svelte';
+
     let categories = $state<Category[]>([]);
     let menuItems = $state<MenuItem[]>([]);
     let selectedCategory = $state<string | null>(null);
@@ -19,7 +21,7 @@
     let editingCategory = $state<Category | null>(null);
 
     // Forms
-    let itemForm = $state({ name: '', description: '', price: '', category_id: '', is_available: true, is_featured: false, sort_order: 0 });
+    let itemForm = $state({ name: '', description: '', price: '', category_id: '', is_available: true, is_featured: false, sort_order: 0, image_url: '' });
     let categoryForm = $state({ name: '', description: '', sort_order: 0 });
 
     onMount(() => { fetchData(); });
@@ -68,10 +70,10 @@
     function openItemModal(item?: MenuItem) {
         if (item) {
             editingItem = item;
-            itemForm = { name: item.name, description: item.description || '', price: item.price.toString(), category_id: item.category_id, is_available: item.is_available, is_featured: item.is_featured, sort_order: item.sort_order };
+            itemForm = { name: item.name, description: item.description || '', price: item.price.toString(), category_id: item.category_id, is_available: item.is_available, is_featured: item.is_featured, sort_order: item.sort_order, image_url: item.image_url || '' };
         } else {
             editingItem = null;
-            itemForm = { name: '', description: '', price: '', category_id: selectedCategory || '', is_available: true, is_featured: false, sort_order: filteredItems.length };
+            itemForm = { name: '', description: '', price: '', category_id: selectedCategory || '', is_available: true, is_featured: false, sort_order: filteredItems.length, image_url: '' };
         }
         showItemModal = true;
     }
@@ -81,7 +83,7 @@
         if (!itemForm.price || parseFloat(itemForm.price) <= 0) { toast.error('Valid price required'); return; }
         if (!itemForm.category_id) { toast.error('Category is required'); return; }
 
-        const data = { name: itemForm.name, description: itemForm.description || null, price: parseFloat(itemForm.price), category_id: itemForm.category_id, is_available: itemForm.is_available, is_featured: itemForm.is_featured, sort_order: itemForm.sort_order };
+        const data = { name: itemForm.name, description: itemForm.description || null, price: parseFloat(itemForm.price), category_id: itemForm.category_id, is_available: itemForm.is_available, is_featured: itemForm.is_featured, sort_order: itemForm.sort_order, image_url: itemForm.image_url || null };
 
         if (editingItem) { await supabase.from('menu_items').update(data).eq('id', editingItem.id); toast.success('Item updated'); }
         else { await supabase.from('menu_items').insert(data); toast.success('Item created'); }
@@ -208,6 +210,9 @@
         <!-- svelte-ignore a11y_click_events_have_key_events -->
         <div class="modal-box" onclick={(e) => e.stopPropagation()}>
             <h2>{editingItem ? 'Edit Item' : 'Add Item'}</h2>
+            
+            <ImageUpload bind:value={itemForm.image_url} label="Menu Item Image" path="menu-items" />
+
             <div class="field">
                 <label class="label" for="item-name">Name *</label>
                 <input id="item-name" class="input" bind:value={itemForm.name} />

@@ -191,14 +191,33 @@
     .orders-table { width:100%; background:var(--color-bg-glass); border:1px solid var(--color-border); border-radius:var(--radius-xl); overflow:hidden; }
     .orders-table-header { display:flex; align-items:center; justify-content:space-between; padding:var(--space-5); border-bottom:1px solid var(--color-border); }
     .orders-table-header h2 { font-size:var(--text-lg); font-weight:var(--weight-semibold); }
-    .table-wrapper { overflow-x:auto; }
-    .table-wrapper table { width:100%; border-collapse:collapse; }
+    .table-wrapper { overflow-x:auto; -webkit-overflow-scrolling: touch; }
+    .table-wrapper table { width:100%; border-collapse:collapse; min-width: 800px; }
     .table-wrapper th { padding:var(--space-3) var(--space-4); font-size:var(--text-xs); font-weight:var(--weight-semibold); color:var(--color-text-muted); text-transform:uppercase; letter-spacing:0.05em; text-align:left; border-bottom:1px solid var(--color-border); }
     .table-wrapper td { padding:var(--space-3) var(--space-4); font-size:var(--text-sm); border-bottom:1px solid var(--color-border); }
     .table-wrapper tr:last-child td { border-bottom:none; }
     .table-wrapper tr:hover td { background:var(--color-bg-glass); }
     .order-actions { display:flex; gap:var(--space-2); }
 
-    @media (max-width:1024px) { .stats-grid { grid-template-columns:repeat(2,1fr); } }
-    @media (max-width:768px) { .stats-grid { grid-template-columns:1fr; } }
+    @media (max-width: 1024px) {
+        .stats-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+
+    @media (max-width: 768px) {
+        .admin-topbar { flex-direction: column; align-items: flex-start; gap: var(--space-2); margin-bottom: var(--space-6); }
+        .admin-topbar h1 { font-size: var(--text-2xl); }
+        
+        .stats-grid { grid-template-columns: 1fr; gap: var(--space-3); }
+        .stat-card { padding: var(--space-4); }
+        .stat-value { font-size: var(--text-2xl); }
+
+        .orders-table-header { padding: var(--space-4); }
+        .orders-table-header h2 { font-size: var(--text-base); }
+    }
+
+    @media (max-width: 480px) {
+        .admin-main { padding: var(--space-4); }
+        .table-wrapper th, .table-wrapper td { padding: var(--space-3); font-size: 13px; }
+        .order-actions .btn { padding: 6px 10px; font-size: 11px; }
+    }
 </style>
