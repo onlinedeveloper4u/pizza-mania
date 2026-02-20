@@ -124,7 +124,8 @@
                 </div>
 
                 {#each colOrders as order}
-                    {@const nextStatus = getNextKitchenStatus(order)}
+                    {@const next = getNextKitchenStatus(order)}
+                    {@const prev = getPrevKitchenStatus(order)}
                     <div class="kitchen-ticket">
                         <div class="kitchen-ticket-header">
                             <div style="display:flex;align-items:center;gap:var(--space-2)">
@@ -191,21 +192,18 @@
                                     <span class="badge badge-warning" title="Pay at Counter"><Banknote size={12} /></span>
                                 {/if}
                             </div>
-                            <svelte:fragment>
-                                {@const prev = getPrevKitchenStatus(order)}
-                                <div style="display:flex; gap: 4px;">
-                                    {#if prev}
-                                        <button class="btn btn-ghost btn-sm" style="padding:4px" onclick={() => updateStatus(order.id, prev)} title="Move Back to {ORDER_STATUS_LABELS[prev]}">
-                                            <ArrowLeft size={16} />
-                                        </button>
-                                    {/if}
-                                    {#if nextStatus}
-                                        <button class="btn btn-primary btn-sm" onclick={() => updateStatus(order.id, nextStatus)}>
-                                            {ORDER_STATUS_LABELS[nextStatus]} <ArrowRight size={14} />
-                                        </button>
-                                    {/if}
-                                </div>
-                            </svelte:fragment>
+                            <div style="display:flex; gap: 4px;">
+                                {#if prev}
+                                    <button class="btn btn-ghost btn-sm" style="padding:4px" onclick={() => updateStatus(order.id, prev)} title="Move Back to {ORDER_STATUS_LABELS[prev]}">
+                                        <ArrowLeft size={16} />
+                                    </button>
+                                {/if}
+                                {#if next}
+                                    <button class="btn btn-primary btn-sm" onclick={() => updateStatus(order.id, next)}>
+                                        {ORDER_STATUS_LABELS[next]} <ArrowRight size={14} />
+                                    </button>
+                                {/if}
+                            </div>
                         </div>
                     </div>
                 {:else}

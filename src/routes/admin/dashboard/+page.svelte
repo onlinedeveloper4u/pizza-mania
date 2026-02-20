@@ -133,7 +133,8 @@
                 </thead>
                 <tbody>
                     {#each recentOrders as order}
-                        {@const nextStatus = getNextStatus(order)}
+                        {@const next = getNextStatus(order)}
+                        {@const prev = getPrevStatus(order)}
                         <tr>
                             <td style="font-weight:var(--weight-semibold)">{order.tracking_token}</td>
                             <td><span class="badge badge-info">{ORDER_TYPE_LABELS[order.order_type]}</span></td>
@@ -165,30 +166,25 @@
                             </td>
                             <td style="color:var(--color-text-muted);font-size:var(--text-xs)">{timeAgo(order.created_at)}</td>
                             <td>
-                                <svelte:fragment>
-                                    {@const next = getNextStatus(order)}
-                                    {@const prev = getPrevStatus(order)}
-                                    
-                                    <div class="order-actions">
-                                        {#if prev}
-                                            <button class="btn btn-ghost btn-sm" style="padding:4px" onclick={() => updateStatus(order.id, prev)} title="Move Back to {ORDER_STATUS_LABELS[prev]}">
-                                                <ArrowLeft size={16} />
-                                            </button>
-                                        {/if}
+                                <div class="order-actions">
+                                    {#if prev}
+                                        <button class="btn btn-ghost btn-sm" style="padding:4px" onclick={() => updateStatus(order.id, prev)} title="Move Back to {ORDER_STATUS_LABELS[prev]}">
+                                            <ArrowLeft size={16} />
+                                        </button>
+                                    {/if}
 
-                                        {#if next}
-                                            <button class="btn btn-primary btn-sm" onclick={() => updateStatus(order.id, next)}>
-                                                {ORDER_STATUS_LABELS[next]}
-                                            </button>
-                                        {/if}
+                                    {#if next}
+                                        <button class="btn btn-primary btn-sm" onclick={() => updateStatus(order.id, next)}>
+                                            {ORDER_STATUS_LABELS[next]}
+                                        </button>
+                                    {/if}
 
-                                        {#if order.status === 'new'}
-                                            <button class="btn btn-ghost btn-sm" style="color:var(--color-danger)" onclick={() => updateStatus(order.id, 'cancelled')}>
-                                                Cancel
-                                            </button>
-                                        {/if}
-                                    </div>
-                                </svelte:fragment>
+                                    {#if order.status === 'new'}
+                                        <button class="btn btn-ghost btn-sm" style="color:var(--color-danger)" onclick={() => updateStatus(order.id, 'cancelled')}>
+                                            Cancel
+                                        </button>
+                                    {/if}
+                                </div>
                             </td>
                         </tr>
                     {:else}

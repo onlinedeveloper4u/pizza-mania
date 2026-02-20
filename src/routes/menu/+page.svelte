@@ -174,35 +174,7 @@
             </div>
         </div>
 
-        <!-- Applicable Deals Section -->
-        {#if applicableDeals.length > 0 && !searchQuery && activeCategory === categories[0]?.id}
-            <div class="deals-section animate-fadeIn">
-                <div class="deals-header">
-                    <h2 class="section-title">Special Offers</h2>
-                    <span class="deals-badge">Available for {currentOrderType === 'pickup' ? 'Takeaway' : 'Delivery'}</span>
-                </div>
-                <div class={layout === 'grid' ? 'menu-grid' : 'menu-list'}>
-                    {#each applicableDeals as deal (deal.id)}
-                        <button class={cn("menu-card glass deal-card", layout === 'list' && "list-item")} onclick={() => openDealModal(deal)}>
-                            <div class="menu-card-img deal-img-bg">
-                                <div class="deal-badge">Offer</div>
-                            </div>
-                            <div class="menu-card-body">
-                                <h3>{deal.title}</h3>
-                                <p>{deal.description?.substring(0, 60) || ''}...</p>
-                                <div class="menu-card-footer">
-                                    <span class="price"><span class="currency">€</span>{deal.price.toFixed(2)}</span>
-                                    <div class="add-btn deal-add-btn">
-                                        <Plus size={20} />
-                                    </div>
-                                </div>
-                            </div>
-                        </button>
-                    {/each}
-                </div>
-                <div class="section-divider"></div>
-            </div>
-        {/if}
+
 
         <!-- Category Pills -->
         <div class="category-pills">
