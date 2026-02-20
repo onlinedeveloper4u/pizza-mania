@@ -24,6 +24,17 @@
     let dateInput: HTMLInputElement | undefined = $state();
     let timeInput: HTMLInputElement | undefined = $state();
     
+    // Body Scroll Lock
+    $effect(() => {
+        if (show) {
+            const originalStyle = window.getComputedStyle(document.body).overflow;
+            document.body.style.overflow = 'hidden';
+            return () => {
+                document.body.style.overflow = originalStyle;
+            };
+        }
+    });
+    
     let googleMapsLoaded = $state(false);
     let placesLibrary: any;
     let geocoder: any;
@@ -399,7 +410,8 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        padding: var(--space-10) var(--space-4);
+        padding: var(--space-4);
+        overflow-y: auto;
     }
 
     .modal-content {
@@ -407,6 +419,7 @@
         color: var(--color-text-primary);
         width: 100%;
         max-width: 480px;
+        max-height: 90vh;
         border-radius: var(--radius-2xl);
         overflow: hidden;
         display: flex;
@@ -416,10 +429,13 @@
     }
 
     .modal-header {
-        padding: var(--space-5) var(--space-4) var(--space-2);
+        padding: var(--space-5) var(--space-4) var(--space-3);
         display: flex;
         justify-content: space-between;
         align-items: center;
+        border-bottom: 1px solid var(--color-border);
+        background: var(--color-bg-secondary);
+        z-index: 10;
     }
 
     .modal-header h2 {
@@ -449,20 +465,9 @@
     }
 
     .modal-body {
-        padding: 0 var(--space-4) var(--space-4);
-        max-height: 80vh;
+        padding: var(--space-4);
         overflow-y: auto;
-        scrollbar-width: none;
-    }
-
-    .modal-body::-webkit-scrollbar {
-        display: none;
-    }
-
-    .modal-body {
-        padding: 0 var(--space-4) var(--space-4);
-        max-height: 80vh;
-        overflow-y: auto;
+        flex: 1;
         scrollbar-width: none;
     }
 
@@ -815,7 +820,10 @@
 
     /* Action Footer */
     .modal-footer {
-        padding: 0 var(--space-4) var(--space-4);
+        padding: var(--space-4);
+        border-top: 1px solid var(--color-border);
+        background: var(--color-bg-secondary);
+        z-index: 10;
     }
 
     .confirm-order-btn {

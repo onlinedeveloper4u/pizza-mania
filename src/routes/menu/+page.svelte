@@ -116,6 +116,17 @@
     let currentOrderType = $state<'delivery' | 'pickup' | 'dine_in' | null>(null);
     cart.subscribe(s => currentOrderType = s.orderType);
 
+    // Body Scroll Lock for Modal
+    $effect(() => {
+        if (selectedItem) {
+            const originalStyle = window.getComputedStyle(document.body).overflow;
+            document.body.style.overflow = 'hidden';
+            return () => {
+                document.body.style.overflow = originalStyle;
+            };
+        }
+    });
+
     let applicableDeals = $derived(deals.filter(d => {
         if (!currentOrderType) return d.type === 'both' || d.type === 'delivery'; // Default 
         if (d.type === 'both') return true;
@@ -341,7 +352,7 @@
                 <!-- Sticky Footer -->
                 <div class="modal-footer-sticky">
                     <button class="btn btn-primary btn-lg add-to-cart-btn" onclick={handleAddToCart}>
-                        Add to Cart — {formatPrice(modalPrice * quantity)}
+                        Add — {formatPrice(modalPrice * quantity)}
                     </button>
                 </div>
             </div>
@@ -757,22 +768,26 @@
         position: fixed;
         inset: 0;
         background: var(--color-bg-overlay);
-        z-index: var(--z-modal);
+        backdrop-filter: blur(8px);
+        z-index: 1000;
         display: flex;
-        align-items: flex-end;
-        animation: fadeIn var(--transition-fast);
+        align-items: center;
+        justify-content: center;
+        padding: var(--space-4);
+        overflow-y: auto;
     }
 
     .modal-sheet {
         background: var(--color-bg-secondary);
-        border-top-left-radius: var(--radius-2xl);
-        border-top-right-radius: var(--radius-2xl);
         width: 100%;
-        max-height: 90vh; /* Changed from 90dvh for better compatibility */
+        max-width: 500px;
+        max-height: 90vh;
+        border-radius: var(--radius-2xl);
+        overflow: hidden;
         display: flex;
         flex-direction: column;
-        animation: slideUp 0.3s ease-out;
-        position: relative;
+        border: 1px solid var(--color-border);
+        box-shadow: 0 30px 60px -12px rgba(0, 0, 0, 0.7);
     }
 
     /* Sticky Header */

@@ -21,6 +21,15 @@
     // Configuration for the deal steps
     let steps: any[] = $state([]);
 
+    // Body Scroll Lock
+    $effect(() => {
+        const originalStyle = window.getComputedStyle(document.body).overflow;
+        document.body.style.overflow = 'hidden';
+        return () => {
+            document.body.style.overflow = originalStyle;
+        };
+    });
+
     onMount(async () => {
         await fetchMenu();
         configureSteps();
@@ -220,8 +229,9 @@
         z-index: var(--z-modal);
         display: flex;
         justify-content: center;
-        align-items: flex-end; /* Mobile: Bottom Sheet */
-        padding: 0;
+        align-items: center; /* Center on mobile too for consistency if desired, or keep as bottom sheet */
+        padding: var(--space-4);
+        overflow-y: auto;
     }
 
     .modal-content {

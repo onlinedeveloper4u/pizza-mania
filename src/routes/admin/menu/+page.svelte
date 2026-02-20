@@ -26,6 +26,17 @@
     let itemForm = $state({ name: '', description: '', price: '', category_id: '', is_available: true, is_featured: false, sort_order: 0, image_url: '', options: [] as any[] });
     let categoryForm = $state({ name: '', description: '', sort_order: 0 });
 
+    // Body Scroll Lock
+    $effect(() => {
+        if (showItemModal || showCategoryModal) {
+            const originalStyle = window.getComputedStyle(document.body).overflow;
+            document.body.style.overflow = 'hidden';
+            return () => {
+                document.body.style.overflow = originalStyle;
+            };
+        }
+    });
+
     onMount(() => { fetchData(); });
 
     async function fetchData() {

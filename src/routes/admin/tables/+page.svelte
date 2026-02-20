@@ -10,6 +10,17 @@
     let loading = $state(true);
     let showModal = $state(false);
     let showQrModal = $state<Table | null>(null);
+
+    // Body Scroll Lock
+    $effect(() => {
+        if (showModal || !!showQrModal) {
+            const originalStyle = window.getComputedStyle(document.body).overflow;
+            document.body.style.overflow = 'hidden';
+            return () => {
+                document.body.style.overflow = originalStyle;
+            };
+        }
+    });
     let editingTable = $state<Table | null>(null);
     let form = $state({ table_number: '', seats: '4' });
     const supabase = createClient();

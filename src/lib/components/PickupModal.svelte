@@ -13,6 +13,17 @@
     let dateInput: HTMLInputElement | undefined = $state();
     let timeInput: HTMLInputElement | undefined = $state();
 
+    // Body Scroll Lock
+    $effect(() => {
+        if (show) {
+            const originalStyle = window.getComputedStyle(document.body).overflow;
+            document.body.style.overflow = 'hidden';
+            return () => {
+                document.body.style.overflow = originalStyle;
+            };
+        }
+    });
+
     function handleStartOrder() {
         onConfirm({
             address: 'Pickup at ' + ($settings?.restaurant_name || 'Pizza Mania'),
@@ -107,23 +118,25 @@
         inset: 0;
         background: var(--color-bg-overlay);
         backdrop-filter: blur(8px);
-        z-index: 1000;
+        z-index: var(--z-modal);
         display: flex;
-        align-items: center;
         justify-content: center;
-        padding: var(--space-10) var(--space-4);
+        align-items: center;
+        padding: var(--space-4);
+        overflow-y: auto;
     }
 
     .modal-content {
+        background: var(--color-bg-secondary);
         width: 100%;
-        max-width: 500px;
-        background: var(--color-bg-primary);
-        border: 1px solid var(--color-border);
+        max-width: 480px;
+        max-height: 90vh;
         border-radius: var(--radius-2xl);
-        box-shadow: var(--shadow-2xl);
-        overflow: hidden;
         display: flex;
         flex-direction: column;
+        border: 1px solid var(--color-border);
+        box-shadow: 0 30px 60px -12px rgba(0, 0, 0, 0.7);
+        overflow: hidden;
     }
 
     .modal-header {
@@ -162,9 +175,9 @@
     }
 
     .modal-body {
-        padding: 0 var(--space-4) var(--space-4);
-        max-height: 80vh;
+        padding: var(--space-4);
         overflow-y: auto;
+        flex: 1;
         scrollbar-width: none;
     }
 
