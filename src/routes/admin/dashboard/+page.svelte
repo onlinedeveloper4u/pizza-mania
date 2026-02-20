@@ -165,6 +165,7 @@
                             </td>
                             <td style="color:var(--color-text-muted);font-size:var(--text-xs)">{timeAgo(order.created_at)}</td>
                             <td>
+                                <svelte:fragment>
                                     {@const next = getNextStatus(order)}
                                     {@const prev = getPrevStatus(order)}
                                     
@@ -180,6 +181,7 @@
                                                 {ORDER_STATUS_LABELS[next]}
                                             </button>
                                         {/if}
+                                </svelte:fragment>
                                     {#if order.status === 'new'}
                                         <button class="btn btn-ghost btn-sm" style="color:var(--color-danger)" onclick={() => updateStatus(order.id, 'cancelled')}>
                                             Cancel

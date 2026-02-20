@@ -191,19 +191,21 @@
                                     <span class="badge badge-warning" title="Pay at Counter"><Banknote size={12} /></span>
                                 {/if}
                             </div>
-                            {@const prev = getPrevKitchenStatus(order)}
-                            <div style="display:flex; gap: 4px;">
-                                {#if prev}
-                                    <button class="btn btn-ghost btn-sm" style="padding:4px" onclick={() => updateStatus(order.id, prev)} title="Move Back to {ORDER_STATUS_LABELS[prev]}">
-                                        <ArrowLeft size={16} />
-                                    </button>
-                                {/if}
-                                {#if nextStatus}
-                                    <button class="btn btn-primary btn-sm" onclick={() => updateStatus(order.id, nextStatus)}>
-                                        {ORDER_STATUS_LABELS[nextStatus]} <ArrowRight size={14} />
-                                    </button>
-                                {/if}
-                            </div>
+                            <svelte:fragment>
+                                {@const prev = getPrevKitchenStatus(order)}
+                                <div style="display:flex; gap: 4px;">
+                                    {#if prev}
+                                        <button class="btn btn-ghost btn-sm" style="padding:4px" onclick={() => updateStatus(order.id, prev)} title="Move Back to {ORDER_STATUS_LABELS[prev]}">
+                                            <ArrowLeft size={16} />
+                                        </button>
+                                    {/if}
+                                    {#if nextStatus}
+                                        <button class="btn btn-primary btn-sm" onclick={() => updateStatus(order.id, nextStatus)}>
+                                            {ORDER_STATUS_LABELS[nextStatus]} <ArrowRight size={14} />
+                                        </button>
+                                    {/if}
+                                </div>
+                            </svelte:fragment>
                         </div>
                     </div>
                 {:else}
