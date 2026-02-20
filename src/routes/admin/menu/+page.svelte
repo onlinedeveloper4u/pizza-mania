@@ -1,5 +1,6 @@
 <script lang="ts">
     import { onMount } from 'svelte';
+    import { settings } from '$lib/stores/settings';
     import { Plus, Edit2, Trash2, UtensilsCrossed } from 'lucide-svelte';
     import { createClient } from '$lib/supabase/client';
     import type { Category, MenuItem } from '$lib/types';
@@ -7,6 +8,7 @@
     import { toast } from 'svelte-sonner';
 
     import ImageUpload from '$lib/components/ImageUpload.svelte';
+    import MenuOptionsEditor from '$lib/components/MenuOptionsEditor.svelte';
 
     let categories = $state<Category[]>([]);
     let menuItems = $state<MenuItem[]>([]);
@@ -21,7 +23,7 @@
     let editingCategory = $state<Category | null>(null);
 
     // Forms
-    let itemForm = $state({ name: '', description: '', price: '', category_id: '', is_available: true, is_featured: false, sort_order: 0, image_url: '' });
+    let itemForm = $state({ name: '', description: '', price: '', category_id: '', is_available: true, is_featured: false, sort_order: 0, image_url: '', options: [] as any[] });
     let categoryForm = $state({ name: '', description: '', sort_order: 0 });
 
     onMount(() => { fetchData(); });
@@ -70,10 +72,10 @@
     function openItemModal(item?: MenuItem) {
         if (item) {
             editingItem = item;
-            itemForm = { name: item.name, description: item.description || '', price: item.price.toString(), category_id: item.category_id, is_available: item.is_available, is_featured: item.is_featured, sort_order: item.sort_order, image_url: item.image_url || '' };
+            itemForm = { name: item.name, description: item.description || '', price: item.price.toString(), category_id: item.category_id, is_available: item.is_available, is_featured: item.is_featured, sort_order: item.sort_order, image_url: item.image_url || '', options: item.options || [] };
         } else {
             editingItem = null;
-            itemForm = { name: '', description: '', price: '', category_id: selectedCategory || '', is_available: true, is_featured: false, sort_order: filteredItems.length, image_url: '' };
+            itemForm = { name: '', description: '', price: '', category_id: selectedCategory || '', is_available: true, is_featured: false, sort_order: filteredItems.length, image_url: '', options: [] };
         }
         showItemModal = true;
     }
@@ -83,7 +85,17 @@
         if (!itemForm.price || parseFloat(itemForm.price) <= 0) { toast.error('Valid price required'); return; }
         if (!itemForm.category_id) { toast.error('Category is required'); return; }
 
-        const data = { name: itemForm.name, description: itemForm.description || null, price: parseFloat(itemForm.price), category_id: itemForm.category_id, is_available: itemForm.is_available, is_featured: itemForm.is_featured, sort_order: itemForm.sort_order, image_url: itemForm.image_url || null };
+        const data = { 
+            name: itemForm.name, 
+            description: itemForm.description || null, 
+            price: parseFloat(itemForm.price), 
+            category_id: itemForm.category_id, 
+            is_available: itemForm.is_available, 
+            is_featured: itemForm.is_featured, 
+            sort_order: itemForm.sort_order, 
+            image_url: itemForm.image_url || null,
+            options: itemForm.options 
+        };
 
         if (editingItem) { await supabase.from('menu_items').update(data).eq('id', editingItem.id); toast.success('Item updated'); }
         else { await supabase.from('menu_items').insert(data); toast.success('Item created'); }
@@ -104,9 +116,9 @@
     }
 </script>
 
-<svelte:head><title>Menu Management — Pizza Mania Admin</title></svelte:head>
+<svelte:head><title>Menu Management — {$settings?.restaurant_name || 'Pizza Mania'} Admin</title></svelte:head>
 
-<div>
+<div class="admin-page-container">
     <div class="admin-topbar">
         <h1>Menu Management</h1>
         <button class="btn btn-primary" onclick={() => openItemModal()}>
@@ -115,14 +127,15 @@
     </div>
 
     <div class="menu-mgmt-grid">
-        <!-- Categories sidebar -->
+        <!-- Categories sidebar -> Topbar -->
         <div class="category-list">
             <div class="category-list-header">
                 <h3>Categories</h3>
                 <button class="btn btn-ghost btn-sm" onclick={() => openCategoryModal()}>
-                    <Plus size={14} />
+                    <Plus size={14} /> Add Category
                 </button>
             </div>
+            <div class="category-items-scroll">
             {#each categories as cat}
                 <div
                     class={cn('category-list-item', selectedCategory === cat.id && 'category-list-item-active')}
@@ -142,6 +155,7 @@
                     </div>
                 </div>
             {/each}
+            </div>
         </div>
 
         <!-- Menu Items -->
@@ -242,6 +256,9 @@
                     <input type="checkbox" bind:checked={itemForm.is_featured} /> Featured
                 </label>
             </div>
+
+            <MenuOptionsEditor bind:options={itemForm.options} />
+
             <div class="modal-actions">
                 <button class="btn btn-outline" onclick={() => (showItemModal = false)}>Cancel</button>
                 <button class="btn btn-primary" onclick={saveItemForm}>{editingItem ? 'Update' : 'Create'}</button>
@@ -251,21 +268,32 @@
 {/if}
 
 <style>
+    .admin-page-container {
+        width: 100%;
+        max-width: 100%;
+        overflow-x: hidden;
+    }
+
     .admin-topbar { display:flex; align-items:center; justify-content:space-between; margin-bottom:var(--space-8); }
     .admin-topbar h1 { font-family:var(--font-display); font-size:var(--text-3xl); font-weight:var(--weight-bold); }
 
-    .menu-mgmt-grid { display:grid; grid-template-columns:300px 1fr; gap:var(--space-6); }
+    .menu-mgmt-grid { display:flex; flex-direction:column; gap:var(--space-6); min-width: 0; }
 
-    .category-list { background:var(--color-bg-glass); border:1px solid var(--color-border); border-radius:var(--radius-xl); overflow:hidden; }
-    .category-list-header { display:flex; align-items:center; justify-content:space-between; padding:var(--space-4) var(--space-5); border-bottom:1px solid var(--color-border); }
-    .category-list-header h3 { font-size:var(--text-sm); font-weight:var(--weight-semibold); }
-    .category-list-item { display:flex; align-items:center; justify-content:space-between; padding:var(--space-3) var(--space-5); border-bottom:1px solid var(--color-border); cursor:pointer; transition:background var(--transition-fast); }
-    .category-list-item:last-child { border-bottom:none; }
-    .category-list-item:hover { background:var(--color-bg-glass); }
-    .category-list-item-active { background:rgba(230,57,70,0.08) !important; color:var(--color-primary); }
+    .category-list { background:var(--color-bg-glass); border:1px solid var(--color-border); border-radius:var(--radius-xl); overflow:hidden; min-width: 0; }
+    .category-list-header { display:flex; align-items:center; justify-content:space-between; padding:var(--space-3) var(--space-4); border-bottom:1px solid var(--color-border); }
+    .category-list-header h3 { font-size:var(--text-md); font-weight:var(--weight-semibold); }
+    
+    .category-items-scroll { display:flex; flex-wrap:nowrap; overflow-x:auto; padding:var(--space-4); gap:var(--space-3); scrollbar-width:thin; width:100%; box-sizing:border-box; }
+    .category-items-scroll::-webkit-scrollbar { height:6px; }
+    .category-items-scroll::-webkit-scrollbar-track { background:transparent; }
+    .category-items-scroll::-webkit-scrollbar-thumb { background:var(--color-border); border-radius:3px; }
+    
+    .category-list-item { display:flex; align-items:center; gap:var(--space-3); padding:var(--space-2) var(--space-4); border:1px solid var(--color-border); border-radius:var(--radius-full); cursor:pointer; transition:all var(--transition-fast); white-space:nowrap; flex-shrink:0; }
+    .category-list-item:hover { background:var(--color-bg-glass); border-color:var(--color-border-hover); }
+    .category-list-item-active { background:rgba(230,57,70,0.08) !important; color:var(--color-primary); border-color:var(--color-primary); }
 
-    .menu-items-list { display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:var(--space-4); }
-    .menu-item-card { background:var(--color-bg-glass); border:1px solid var(--color-border); border-radius:var(--radius-xl); padding:var(--space-4); transition:all var(--transition-fast); }
+    .menu-items-list { display:grid; grid-template-columns:repeat(auto-fill,minmax(210px,1fr)); gap:var(--space-4); min-width: 0; }
+    .menu-item-card { background:var(--color-bg-glass); border:1px solid var(--color-border); border-radius:var(--radius-xl); padding:var(--space-4); transition:all var(--transition-fast); display:flex; flex-direction:column; }
     .menu-item-card:hover { border-color:var(--color-border-hover); }
     .menu-item-card-img { width:100%; aspect-ratio:16/9; border-radius:var(--radius-md); object-fit:cover; margin-bottom:var(--space-3); }
     .menu-item-card-placeholder { width:100%; aspect-ratio:16/9; border-radius:var(--radius-md); background:var(--color-bg-tertiary); display:flex; align-items:center; justify-content:center; margin-bottom:var(--space-3); }
@@ -278,5 +306,7 @@
     .modal-box h2 { font-size:var(--text-xl); font-weight:var(--weight-semibold); margin-bottom:var(--space-6); }
     .modal-actions { display:flex; gap:var(--space-3); justify-content:flex-end; margin-top:var(--space-6); }
 
-    @media (max-width:1024px) { .menu-mgmt-grid { grid-template-columns:1fr; } }
+    @media (max-width:1024px) { 
+        .menu-items-list { grid-template-columns:1fr; }
+    }
 </style>

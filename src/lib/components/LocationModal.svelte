@@ -4,10 +4,12 @@
     import { fade, scale, slide } from 'svelte/transition';
     import { createClient } from '$lib/supabase/client';
     import { PUBLIC_GOOGLE_MAPS_API_KEY } from '$env/static/public';
+    import { settings } from '$lib/stores/settings';
 
     let { show = $bindable(false), onConfirm } = $props();
 
     let address = $state('');
+    let searchInput = $state('');
     let searchResults = $state<{ title: string, subtitle: string, placeId?: string }[]>([]);
     let isSearching = $state(false);
     let showResults = $state(false);
@@ -19,12 +21,14 @@
     let mapMoved = $state(false);
     let searchTimeout: any;
     
-    let dateInput: HTMLInputElement;
-    let timeInput: HTMLInputElement;
+    let dateInput: HTMLInputElement | undefined = $state();
+    let timeInput: HTMLInputElement | undefined = $state();
     
     let googleMapsLoaded = $state(false);
     let placesLibrary: any;
     let geocoder: any;
+    let map: any = $state(null);
+    let mapElement: HTMLElement | undefined = $state();
 
     async function loadGoogleMaps() {
         if (window.google?.maps?.importLibrary) {
@@ -32,12 +36,13 @@
             return;
         }
 
-        // Modern loading pattern (Bootstrap)
-        const script = document.createElement('script');
-        script.src = `https://maps.googleapis.com/maps/api/js?key=${PUBLIC_GOOGLE_MAPS_API_KEY}&loading=async&v=weekly`;
-        script.async = true;
-        script.onload = () => initServices();
-        document.head.appendChild(script);
+        // The recommended modern inline bootstrap loader
+        (g=>{var h,a,k,p="The Google Maps JavaScript API",c="google",l="importLibrary",q="__ib__",m=document,b=window;b=b[c]||(b[c]={});const d=b.maps||(b.maps={}),r=new Set,e=new URLSearchParams,u=()=>h||(h=new Promise(async(f,n)=>{await (a=m.createElement("script"));e.set("libraries",[...r]+"");for(k in g)e.set(k.replace(/[A-Z]/g,t=>"_"+t[0].toLowerCase()),g[k]);e.set("callback",c+".maps."+q);a.src=`https://maps.${c}apis.com/maps/api/js?`+e;d[q]=f;a.onerror=()=>h=n(Error(p+" could not load."));a.nonce=m.querySelector("script[nonce]")?.nonce||"";m.head.append(a)}));d[l]?console.warn(p+" only loads once. Ignoring:",g):d[l]=(f,...n)=>r.add(f)&&u().then(()=>d[l](f,...n))})({
+            key: PUBLIC_GOOGLE_MAPS_API_KEY,
+            v: "weekly",
+        });
+
+        initServices();
     }
 
     async function initServices() {
@@ -47,6 +52,36 @@
             // @ts-ignore
             const { Geocoder } = await google.maps.importLibrary("geocoding");
             geocoder = new Geocoder();
+            
+            // @ts-ignore
+            const { Map } = await google.maps.importLibrary("maps");
+            if (mapElement) {
+                map = new Map(mapElement, {
+                    center: { lat: 50.41, lng: 4.44 }, // Charleroi generic
+                    zoom: 13,
+                    mapId: 'DEMO_MAP_ID',
+                    disableDefaultUI: true,
+                    gestureHandling: 'greedy'
+                });
+
+                map.addListener('dragend', () => {
+                    if (!geocoder) return;
+                    const center = map.getCenter();
+                    geocoder.geocode({ location: center }, (results: any, status: any) => {
+                        if (status === 'OK' && results[0]) {
+                            address = results[0].formatted_address;
+                            searchInput = results[0].formatted_address;
+                            mapMoved = true;
+                        }
+                    });
+                });
+
+                map.addListener('dragstart', () => {
+                    mapMoved = true;
+                    showResults = false;
+                });
+            }
+
             googleMapsLoaded = true;
         } catch (err) {
             console.error("Failed to load Google Maps libraries:", err);
@@ -103,17 +138,28 @@
 
     function handleInput(e: Event) {
         const value = (e.target as HTMLInputElement).value;
-        address = value;
+        searchInput = value;
         showResults = true;
         
         clearTimeout(searchTimeout);
         searchTimeout = setTimeout(() => performSearch(value), 400);
     }
 
-    function selectAddress(res: { title: string, subtitle: string }) {
-        address = res.title + (res.subtitle ? `, ${res.subtitle}` : '');
+    function selectAddress(res: { title: string, subtitle: string, placeId?: string }) {
+        const fullAddress = res.title + (res.subtitle ? `, ${res.subtitle}` : '');
+        address = fullAddress;
+        searchInput = fullAddress;
         showResults = false;
         mapMoved = true;
+
+        if (res.placeId && geocoder && map) {
+            geocoder.geocode({ placeId: res.placeId }, (results: any, status: any) => {
+                if (status === 'OK' && results[0]) {
+                    map.panTo(results[0].geometry.location);
+                    map.setZoom(16);
+                }
+            });
+        }
     }
 
     async function handleLocateMe() {
@@ -131,18 +177,31 @@
                     geocoder.geocode({ location: { lat: latitude, lng: longitude } }, (results: any, status: any) => {
                         if (status === 'OK' && results[0]) {
                             address = results[0].formatted_address;
+                            searchInput = results[0].formatted_address;
                             mapMoved = true;
                         } else {
                             address = "Current Location Detected";
+                            searchInput = "Current Location Detected";
                             mapMoved = true;
                         }
+
+                        if (map) {
+                            map.panTo({ lat: latitude, lng: longitude });
+                            map.setZoom(16);
+                        }
+
                         isLocating = false;
                         showResults = false;
                     });
                 } else {
                     // Fallback to coordinates if geocoder failed or not loaded
                     address = `${latitude.toFixed(6)}, ${longitude.toFixed(6)}`;
+                    searchInput = `${latitude.toFixed(6)}, ${longitude.toFixed(6)}`;
                     mapMoved = true;
+                    if (map) {
+                        map.panTo({ lat: latitude, lng: longitude });
+                        map.setZoom(16);
+                    }
                     isLocating = false;
                     showResults = false;
                 }
@@ -157,6 +216,7 @@
 
     function handleStartOrder() {
         if (!address.trim()) return;
+        
         onConfirm({
             address,
             type: deliveryTime,
@@ -187,7 +247,7 @@
                                 type="text" 
                                 class="main-address-input" 
                                 placeholder="Street, number, area..." 
-                                value={address}
+                                value={searchInput}
                                 oninput={handleInput}
                                 onfocus={() => showResults = true}
                             />
@@ -196,8 +256,8 @@
                                     <Loader2 size={18} />
                                 </div>
                             {/if}
-                            {#if address.length > 0 && !isSearching}
-                                <button class="clear-input" onclick={() => { address = ''; searchResults = []; }} aria-label="Clear">
+                            {#if searchInput.length > 0 && !isSearching}
+                                <button class="clear-input" onclick={() => { searchInput = ''; address = ''; searchResults = []; }} aria-label="Clear">
                                     <X size={20} strokeWidth={2.5} />
                                 </button>
                             {/if}
@@ -225,47 +285,51 @@
                 <!-- Map Section (Domino's Layout + Dark Theme) -->
                 <div class="map-area">
                     <div class="map-graphic">
-                        <div class="map-grid" aria-hidden="true"></div>
+                        <div bind:this={mapElement} class="map-instance-container"></div>
+                        <div class="map-grid" aria-hidden="true" style="pointer-events:none;"></div>
                         
                         <!-- Floating Controls -->
                         <div class="map-controls">
-                            <button class="map-locate-btn" onclick={handleLocateMe} disabled={isLocating}>
-                                <div class="btn-content">
-                                    {#if isLocating}
-                                        <Loader2 size={18} class="animate-spin" />
-                                        <span>Locating...</span>
-                                    {:else}
-                                        <LocateFixed size={18} />
-                                        <span>Locate me</span>
-                                    {/if}
-                                </div>
+                            <button class="map-locate-btn" onclick={handleLocateMe} disabled={isLocating} aria-label="Locate me">
+                                {#if isLocating}
+                                    <Loader2 size={20} class="animate-spin" />
+                                {:else}
+                                    <LocateFixed size={20} />
+                                {/if}
                             </button>
-                            <div class="map-store-badge">
-                                STORE: JUMET CENTRE
-                            </div>
                         </div>
 
                         <!-- Central Marker -->
                         <div class="marker-container" style={mapMoved ? 'transform: translate(-50%, -65%)' : ''}>
                             <div class="marker-pin-wrapper">
-                                <div class="marker-tooltip" transition:fade>
-                                    <div class="tooltip-text">Confirm your location</div>
-                                    <div class="tooltip-arrow"></div>
-                                </div>
                                 <div class="marker-pin">
                                     <MapPin size={36} strokeWidth={3} />
                                     <div class="marker-pulse"></div>
                                 </div>
                             </div>
                         </div>
-
-                        <!-- Map Footer Hint -->
+                    </div>
+                    
+                    <div class="map-info-footer">
+                        <div class="map-store-badge">
+                            STORE: {$settings?.restaurant_name?.toUpperCase() || 'JUMET CENTRE'}
+                        </div>
                         <div class="map-footer-hint">
-                            <Navigation size={12} />
+                            <Navigation size={14} />
                             <span>Drag the pin to adjust</span>
                         </div>
                     </div>
                 </div>
+
+                {#if address}
+                    <div class="selected-address-box">
+                        <MapPin size={20} class="selected-icon" />
+                        <div class="selected-details">
+                            <span class="selected-title">Delivery Address</span>
+                            <span class="selected-text">{address}</span>
+                        </div>
+                    </div>
+                {/if}
 
                 <!-- Delivery Option Section -->
                 <div class="form-section time-section">
@@ -277,7 +341,6 @@
                             <div class="custom-radio"></div>
                             <div class="time-card-content">
                                 <span class="time-primary">Deliver Now</span>
-                                <span class="time-secondary">ASAP • 35-45 mins</span>
                             </div>
                         </label>
 
@@ -286,7 +349,6 @@
                             <div class="custom-radio"></div>
                             <div class="time-card-content">
                                 <span class="time-primary">Deliver Later</span>
-                                <span class="time-secondary">Schedule for later</span>
                             </div>
                         </label>
                     </div>
@@ -337,7 +399,7 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        padding: var(--space-4);
+        padding: var(--space-10) var(--space-4);
     }
 
     .modal-content {
@@ -354,7 +416,7 @@
     }
 
     .modal-header {
-        padding: var(--space-6) var(--space-6) var(--space-4);
+        padding: var(--space-5) var(--space-4) var(--space-2);
         display: flex;
         justify-content: space-between;
         align-items: center;
@@ -387,9 +449,25 @@
     }
 
     .modal-body {
-        padding: 0 var(--space-6) var(--space-6);
+        padding: 0 var(--space-4) var(--space-4);
         max-height: 80vh;
         overflow-y: auto;
+        scrollbar-width: none;
+    }
+
+    .modal-body::-webkit-scrollbar {
+        display: none;
+    }
+
+    .modal-body {
+        padding: 0 var(--space-4) var(--space-4);
+        max-height: 80vh;
+        overflow-y: auto;
+        scrollbar-width: none;
+    }
+
+    .modal-body::-webkit-scrollbar {
+        display: none;
     }
 
     .form-section {
@@ -430,9 +508,9 @@
         width: 100%;
         border: none;
         background: none;
-        padding: var(--space-4);
+        padding: 12px var(--space-4);
         padding-right: var(--space-10);
-        font-size: 16px;
+        font-size: 15px;
         font-weight: 600;
         color: var(--color-text-primary);
         outline: none;
@@ -465,7 +543,7 @@
     /* Map Graphic Refinement */
     .map-area {
         margin-bottom: var(--space-6);
-        border-radius: var(--radius-2xl);
+        border-radius: var(--radius-sm);
         overflow: hidden;
         border: 1px solid var(--color-border);
         background: #000;
@@ -473,7 +551,7 @@
 
     .map-graphic {
         position: relative;
-        height: 240px;
+        height: 200px;
         background: radial-gradient(circle at center, #1a1a1a 0%, #000000 100%);
         display: flex;
         align-items: center;
@@ -484,44 +562,48 @@
         position: absolute;
         inset: 0;
         background-color: transparent;
-        opacity: 0.1;
         background-image: 
-            linear-gradient(rgba(255,255,255,0.2) 1px, transparent 1px), 
-            linear-gradient(90deg, rgba(255,255,255,0.2) 1px, transparent 1px);
+            linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
         background-size: 40px 40px;
+        background-position: center center;
+        z-index: 1;
     }
 
+    .map-instance-container {
+        position: absolute;
+        inset: 0;
+        z-index: 0;
+    }
+
+    /* Target google maps UI to hide terms/logos neatly if disabled */
     .map-controls {
         position: absolute;
-        top: var(--space-4);
-        left: 0;
-        right: 0;
-        padding: 0 var(--space-4);
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: var(--space-2);
+        top: var(--space-3);
+        right: var(--space-3);
         z-index: 20;
     }
 
     .map-locate-btn {
-        background: var(--color-primary);
-        color: white;
-        border: none;
-        padding: 8px 18px;
-        border-radius: var(--radius-full);
-        font-weight: 700;
-        font-size: var(--text-sm);
+        background: var(--color-bg-secondary);
+        color: var(--color-primary);
+        border: 1px solid var(--color-border);
+        width: 44px;
+        height: 44px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
         cursor: pointer;
         transition: all var(--transition-base);
-        box-shadow: var(--shadow-glow-primary);
+        box-shadow: var(--shadow-md);
         pointer-events: auto;
     }
 
     .map-locate-btn:hover {
         transform: translateY(-2px);
-        background: var(--color-primary-dark);
-        box-shadow: 0 0 30px rgba(255, 0, 0, 0.4);
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        border-color: var(--color-primary);
     }
 
     .map-locate-btn:disabled {
@@ -529,14 +611,22 @@
         cursor: wait;
     }
 
+    .map-info-footer {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: var(--space-1);
+        padding: var(--space-3);
+        background: var(--color-bg-secondary);
+        border-top: 1px solid var(--color-border);
+        border-bottom-left-radius: var(--radius-sm);
+        border-bottom-right-radius: var(--radius-sm);
+    }
+
     .map-store-badge {
-        background: var(--color-bg-tertiary);
         color: var(--color-amber);
-        padding: 4px 12px;
         font-weight: 800;
-        font-size: 11px;
-        border-radius: var(--radius-full);
-        border: 1px solid var(--color-border);
+        font-size: 13px;
         text-transform: uppercase;
         letter-spacing: 0.05em;
     }
@@ -555,31 +645,6 @@
         display: flex;
         flex-direction: column;
         align-items: center;
-    }
-
-    .marker-tooltip {
-        background: rgba(0, 0, 0, 0.9);
-        backdrop-filter: blur(4px);
-        color: white;
-        padding: 8px 14px;
-        border-radius: var(--radius-lg);
-        font-size: 13px;
-        font-weight: 600;
-        white-space: nowrap;
-        position: relative;
-        margin-bottom: 10px;
-        border: 1px solid var(--color-border);
-        box-shadow: 0 10px 25px rgba(0,0,0,0.5);
-    }
-
-    .tooltip-arrow {
-        position: absolute;
-        bottom: -6px;
-        left: 50%;
-        transform: translateX(-50%);
-        border-left: 6px solid transparent;
-        border-right: 6px solid transparent;
-        border-top: 6px solid var(--color-border);
     }
 
     .marker-pin {
@@ -613,20 +678,12 @@
     }
 
     .map-footer-hint {
-        position: absolute;
-        bottom: var(--space-4);
-        left: var(--space-4);
-        background: rgba(0, 0, 0, 0.7);
-        backdrop-filter: blur(4px);
-        color: var(--color-text-secondary);
-        padding: 5px 12px;
-        border-radius: var(--radius-full);
-        font-size: 11px;
-        font-weight: 600;
         display: flex;
         align-items: center;
-        gap: 8px;
-        border: 1px solid var(--color-border);
+        gap: var(--space-2);
+        color: var(--color-text-muted);
+        font-size: 13px;
+        font-weight: 500;
     }
 
     /* Time Selection Refinement */
@@ -640,17 +697,17 @@
     }
 
     .time-radio-group {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: var(--space-3);
-        margin-bottom: var(--space-4);
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-4);
+        margin-bottom: var(--space-5);
     }
 
     .time-card {
         display: flex;
-        flex-direction: column;
-        align-items: flex-start;
-        padding: var(--space-4);
+        flex-direction: row;
+        align-items: center;
+        padding: var(--space-4) var(--space-5);
         background: var(--color-bg-tertiary);
         border: 2px solid var(--color-border);
         border-radius: var(--radius-xl);
@@ -670,37 +727,43 @@
     }
 
     .custom-radio {
-        width: 18px;
-        height: 18px;
+        width: 22px;
+        height: 22px;
         border: 2px solid var(--color-border);
         border-radius: 50%;
-        margin-bottom: var(--space-3);
+        margin-right: var(--space-4);
         display: flex;
         align-items: center;
         justify-content: center;
+        flex-shrink: 0;
     }
 
     .active .custom-radio { border-color: var(--color-primary); }
 
     .active .custom-radio::after {
         content: '';
-        width: 10px;
-        height: 10px;
+        width: 12px;
+        height: 12px;
         background: var(--color-primary);
         border-radius: 50%;
     }
 
+    .time-card-content {
+        display: flex;
+        flex-direction: column;
+    }
+
     .time-primary {
         font-weight: 800;
-        font-size: var(--text-sm);
+        font-size: var(--text-base);
         display: block;
-        margin-bottom: 4px;
+        margin-bottom: 2px;
     }
 
     .time-secondary {
-        font-size: 11px;
+        font-size: 13px;
         color: var(--color-text-muted);
-        font-weight: 600;
+        font-weight: 500;
     }
 
     .scheduled-picker {
@@ -752,7 +815,7 @@
 
     /* Action Footer */
     .modal-footer {
-        padding: var(--space-4) var(--space-6) var(--space-6);
+        padding: 0 var(--space-4) var(--space-4);
     }
 
     .confirm-order-btn {
@@ -760,7 +823,7 @@
         background: linear-gradient(135deg, var(--color-primary), var(--color-primary-dark));
         color: white;
         border: none;
-        padding: 18px;
+        padding: 16px;
         border-radius: var(--radius-xl);
         font-size: 18px;
         font-weight: 800;

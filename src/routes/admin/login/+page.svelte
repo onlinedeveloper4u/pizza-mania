@@ -3,6 +3,10 @@
     import { createClient } from '$lib/supabase/client';
     import { APP_NAME } from '$lib/constants';
     import { Loader2, LogIn } from 'lucide-svelte';
+    import { settings } from '$lib/stores/settings';
+    import { onMount } from 'svelte';
+
+    onMount(() => { settings.fetch(); });
 
     let email = $state('');
     let password = $state('');
@@ -46,13 +50,17 @@
 </script>
 
 <svelte:head>
-    <title>Staff Login — {APP_NAME}</title>
+    <title>Staff Login — {$settings?.restaurant_name || APP_NAME}</title>
 </svelte:head>
 
 <div class="admin-login">
     <div class="login-card">
         <div class="login-logo">
-            <img src="/logo.png" alt="{APP_NAME}" class="login-logo-img" />
+            {#if $settings?.logo_url}
+                <img src={$settings.logo_url} alt={$settings?.restaurant_name || APP_NAME} class="login-logo-img" />
+            {:else}
+                <h1 class="login-logo-text">{$settings?.restaurant_name || APP_NAME}</h1>
+            {/if}
         </div>
         <p class="login-subtitle">Staff Dashboard Login</p>
 
@@ -129,6 +137,14 @@
         width: auto;
         object-fit: contain;
         mix-blend-mode: lighten;
+    }
+
+    .login-logo-text {
+        font-family: var(--font-display);
+        font-size: var(--text-3xl);
+        font-weight: var(--weight-bold);
+        color: var(--color-primary);
+        text-align: center;
     }
 
     .login-subtitle {

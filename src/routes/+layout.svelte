@@ -1,11 +1,17 @@
 <script lang="ts">
     import '../app.css';
     import { page } from '$app/stores';
+    import { onMount } from 'svelte';
     import { Toaster } from 'svelte-sonner';
     import Header from '$lib/components/Header.svelte';
     import Footer from '$lib/components/Footer.svelte';
+    import { settings } from '$lib/stores/settings';
 
     let { children } = $props();
+
+    onMount(() => {
+        settings.fetch();
+    });
 
     let isAdmin = $derived($page.url.pathname.startsWith('/admin'));
 </script>

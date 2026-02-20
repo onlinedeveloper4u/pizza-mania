@@ -1,13 +1,18 @@
 <script lang="ts">
     import { Instagram, Facebook, Twitter } from 'lucide-svelte';
-    import { APP_TAGLINE, CONTACT_INFO } from '$lib/constants';
+    import { APP_TAGLINE } from '$lib/constants';
+    import { settings } from '$lib/stores/settings';
 </script>
 
 <footer class="footer">
     <div class="footer-grid">
         <div class="footer-brand">
             <div class="footer-logo">
-                <img src="/logo.png" alt="Pizza Mania" class="footer-logo-img" />
+                {#if $settings?.logo_url}
+                    <img src={$settings.logo_url} alt={$settings?.restaurant_name || 'Pizza Mania'} class="footer-logo-img" />
+                {:else}
+                    <h3 class="footer-logo-text">{$settings?.restaurant_name || 'Pizza Mania'}</h3>
+                {/if}
             </div>
             <p class="footer-desc">
                 {APP_TAGLINE}. Experience the finest flavors crafted by our passionate chefs.
@@ -43,18 +48,24 @@
         <div class="footer-links">
             <h4>Contact</h4>
             <ul>
-                <li><a href={`tel:${CONTACT_INFO.phone}`}>{CONTACT_INFO.phone}</a></li>
-                <li><a href={`mailto:${CONTACT_INFO.email}`}>{CONTACT_INFO.email}</a></li>
-                <li>{CONTACT_INFO.address}</li>
+                {#if $settings?.phone}
+                    <li><a href={`tel:${$settings.phone}`}>{$settings.phone}</a></li>
+                {/if}
+                {#if $settings?.email}
+                    <li><a href={`mailto:${$settings.email}`}>{$settings.email}</a></li>
+                {/if}
+                {#if $settings?.address}
+                    <li>{$settings.address}</li>
+                {/if}
             </ul>
         </div>
     </div>
     <div class="footer-bottom">
         <p>
-            © {new Date().getFullYear()} Pizza Mania. All rights reserved.
+            © {new Date().getFullYear()} {$settings?.restaurant_name || 'Pizza Mania'}. All rights reserved.
         </p>
         <p>
-            {CONTACT_INFO.address} | {CONTACT_INFO.phone}
+            {$settings?.address || ''} {#if $settings?.address && $settings?.phone} | {/if} {$settings?.phone || ''}
         </p>
     </div>
 </footer>

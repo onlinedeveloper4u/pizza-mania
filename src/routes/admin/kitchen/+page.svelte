@@ -1,6 +1,7 @@
 <script lang="ts">
     import { onMount, onDestroy } from 'svelte';
-    import { ChefHat, Clock, ArrowRight, Volume2, VolumeX, CreditCard, Banknote, Truck, Store } from 'lucide-svelte';
+    import { settings } from '$lib/stores/settings';
+    import { Truck, Store, Clock, ChefHat, CreditCard, Banknote, ArrowRight, ArrowLeft } from 'lucide-svelte';
     import { createClient } from '$lib/supabase/client';
     import type { OrderWithItems, OrderStatus } from '$lib/types';
     import { ORDER_STATUS_LABELS, ORDER_TYPE_LABELS, ORDER_STATUS_FLOW } from '$lib/constants';
@@ -88,9 +89,15 @@
         const idx = flow.indexOf(order.status as OrderStatus);
         return idx >= 0 && idx < flow.length - 1 ? flow[idx + 1] : null;
     }
+
+    function getPrevKitchenStatus(order: OrderWithItems): OrderStatus | null {
+        const flow = ORDER_STATUS_FLOW[order.order_type] || [];
+        const idx = flow.indexOf(order.status as OrderStatus);
+        return idx > 0 ? flow[idx - 1] : null;
+    }
 </script>
 
-<svelte:head><title>Kitchen Display — Pizza Mania</title></svelte:head>
+<svelte:head><title>Kitchen Display — {$settings?.restaurant_name || 'Pizza Mania'}</title></svelte:head>
 
 <div>
     <div class="admin-topbar">
@@ -136,6 +143,13 @@
                             </span>
                         </div>
 
+                        {#if order.scheduled_time}
+                            <div style="margin-top:var(--space-2);margin-bottom:var(--space-2);background:rgba(255,177,0,0.15);color:var(--color-warning);padding:4px 8px;border-radius:var(--radius-sm);font-weight:var(--weight-bold);font-size:var(--text-xs);display:flex;align-items:center;gap:4px;">
+                                <Clock size={12} strokeWidth={2.5} />
+                                SCHEDULED: {new Date(order.scheduled_time).toLocaleString('en-GB', { weekday: 'short', hour: '2-digit', minute: '2-digit' })}
+                            </div>
+                        {/if}
+
                         <div class="kitchen-ticket-items">
                             {#each order.order_items || [] as item}
                                 <div class="kitchen-ticket-item">
@@ -177,11 +191,19 @@
                                     <span class="badge badge-warning" title="Pay at Counter"><Banknote size={12} /></span>
                                 {/if}
                             </div>
-                            {#if nextStatus}
-                                <button class="btn btn-primary btn-sm" onclick={() => updateStatus(order.id, nextStatus)}>
-                                    {ORDER_STATUS_LABELS[nextStatus]} <ArrowRight size={14} />
-                                </button>
-                            {/if}
+                            {@const prev = getPrevKitchenStatus(order)}
+                            <div style="display:flex; gap: 4px;">
+                                {#if prev}
+                                    <button class="btn btn-ghost btn-sm" style="padding:4px" onclick={() => updateStatus(order.id, prev)} title="Move Back to {ORDER_STATUS_LABELS[prev]}">
+                                        <ArrowLeft size={16} />
+                                    </button>
+                                {/if}
+                                {#if nextStatus}
+                                    <button class="btn btn-primary btn-sm" onclick={() => updateStatus(order.id, nextStatus)}>
+                                        {ORDER_STATUS_LABELS[nextStatus]} <ArrowRight size={14} />
+                                    </button>
+                                {/if}
+                            </div>
                         </div>
                     </div>
                 {:else}

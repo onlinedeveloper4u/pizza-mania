@@ -1,6 +1,7 @@
 <script lang="ts">
     import { Search, Loader2 } from 'lucide-svelte';
     import { goto } from '$app/navigation';
+    import { settings } from '$lib/stores/settings';
 
     let token = $state('');
     let loading = $state(false);
@@ -20,7 +21,7 @@
 </script>
 
 <svelte:head>
-    <title>Track Your Order — Pizza Mania</title>
+    <title>Track Your Order — {$settings?.restaurant_name || 'Pizza Mania'}</title>
 </svelte:head>
 
 <div class="track-lookup-page">

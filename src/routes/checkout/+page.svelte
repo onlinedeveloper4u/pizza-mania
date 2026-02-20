@@ -1,6 +1,7 @@
 <script lang="ts">
     import { goto } from '$app/navigation';
     import { Truck, Store, UtensilsCrossed, CreditCard, Banknote, Loader2 } from 'lucide-svelte';
+    import { settings } from '$lib/stores/settings';
     import { cart } from '$lib/stores/cart';
     import AddressAutocomplete from '$lib/components/AddressAutocomplete.svelte';
     import { formatPrice, cn } from '$lib/utils';
@@ -77,6 +78,7 @@
                 table_id: cartState.tableId || undefined,
                 payment_method: paymentMethod,
                 special_instructions: specialInstructions.trim() || undefined,
+                scheduled_time: cartState.scheduledAt || undefined,
                 items: cartState.items.map(item => ({
                     menu_item_id: item.menuItem.id,
                     item_name: item.menuItem.name,
@@ -120,7 +122,7 @@
 </script>
 
 <svelte:head>
-    <title>Checkout — Pizza Mania</title>
+    <title>Checkout — {$settings?.restaurant_name || 'Pizza Mania'}</title>
 </svelte:head>
 
 {#if currentItemCount > 0}

@@ -2,8 +2,9 @@ import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { createAdminClient } from '$lib/supabase/admin';
 import { generateTrackingToken } from '$lib/utils';
-import type { CreateOrderPayload } from '$lib/types';
+import type { CreateOrderPayload, OrderWithItems } from '$lib/types';
 import { DELIVERY_FEE } from '$lib/constants';
+import { sendOrderConfirmationEmail } from '$lib/server/email';
 
 export const POST: RequestHandler = async ({ request, url }) => {
     try {
@@ -61,6 +62,7 @@ export const POST: RequestHandler = async ({ request, url }) => {
                 payment_status: 'pending',
                 special_instructions: payload.special_instructions || null,
                 estimated_minutes: payload.order_type === 'delivery' ? 45 : 30,
+                scheduled_time: payload.scheduled_time || null,
             })
             .select()
             .single();
@@ -139,6 +141,11 @@ export const POST: RequestHandler = async ({ request, url }) => {
                     .update({ stripe_session_id: session.id })
                     .eq('id', order.id);
 
+                if (order.customer_email) {
+                    const fullOrderForEmail: OrderWithItems = { ...order, order_items: orderItems as any };
+                    sendOrderConfirmationEmail(fullOrderForEmail, order.customer_email, url.origin).catch(console.error);
+                }
+
                 return json({
                     tracking_token: trackingToken,
                     order_id: order.id,
@@ -152,6 +159,11 @@ export const POST: RequestHandler = async ({ request, url }) => {
                     error_payment: 'Payment setup failed, but order was created',
                 });
             }
+        }
+
+        if (order.customer_email) {
+            const fullOrderForEmail: OrderWithItems = { ...order, order_items: orderItems as any };
+            sendOrderConfirmationEmail(fullOrderForEmail, order.customer_email, url.origin).catch(console.error);
         }
 
         return json({

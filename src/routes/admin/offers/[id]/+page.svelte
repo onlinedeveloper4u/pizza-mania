@@ -1,5 +1,6 @@
 <script lang="ts">
     import { onMount } from 'svelte';
+    import { settings } from '$lib/stores/settings';
     import { page } from '$app/stores';
     import { goto } from '$app/navigation';
     import { createClient } from '$lib/supabase/client';
@@ -114,7 +115,7 @@
     }
 </script>
 
-<svelte:head><title>{isNew ? 'New Deal' : 'Edit Deal'} — Pizza Mania Admin</title></svelte:head>
+<svelte:head><title>{isNew ? 'New Deal' : 'Edit Deal'} — {$settings?.restaurant_name || 'Pizza Mania'} Admin</title></svelte:head>
 
 <div class="editor-page">
     <header class="editor-header">

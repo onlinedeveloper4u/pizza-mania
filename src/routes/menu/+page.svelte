@@ -1,6 +1,7 @@
 <script lang="ts">
     import { onMount } from 'svelte';
     import { Plus, Minus, X, UtensilsCrossed, ShoppingCart, Search, Check } from 'lucide-svelte';
+    import { settings } from '$lib/stores/settings';
     import { createClient } from '$lib/supabase/client';
     import { cart } from '$lib/stores/cart';
     import type { Category, MenuItem, MenuItemOption } from '$lib/types';
@@ -9,6 +10,7 @@
 
     let categories: Category[] = $state([]);
     let menuItems: MenuItem[] = $state([]);
+    let deals: any[] = $state([]);
     let activeCategory: string | null = $state(null);
     let searchQuery = $state('');
     let selectedItem: MenuItem | null = $state(null);
@@ -49,12 +51,14 @@
 
     onMount(async () => {
         const supabase = createClient();
-        const [catRes, itemRes] = await Promise.all([
+        const [catRes, itemRes, dealsRes] = await Promise.all([
             supabase.from('categories').select('*').eq('is_active', true).order('sort_order'),
-            supabase.from('menu_items').select('*').eq('is_available', true).order('sort_order'),
+            supabase.from('menu_items').select('*').eq('is_available', true).order('name'),
+            supabase.from('deals').select('*').eq('is_active', true).order('sort_order', { ascending: true })
         ]);
         if (catRes.data) categories = catRes.data;
         if (itemRes.data) menuItems = itemRes.data;
+        if (dealsRes.data) deals = dealsRes.data;
         if (catRes.data && catRes.data.length > 0) activeCategory = catRes.data[0].id;
         loading = false;
     });
@@ -99,10 +103,30 @@
         toast.success(`${selectedItem.name} added to cart!`);
         selectedItem = null;
     }
+
+    import DealModal from '$lib/components/DealModal.svelte';
+    let showDealModal = $state(false);
+    let selectedDeal: any = $state(null);
+
+    function openDealModal(deal: any) {
+        selectedDeal = deal;
+        showDealModal = true;
+    }
+
+    let currentOrderType = $state<'delivery' | 'pickup' | 'dine_in' | null>(null);
+    cart.subscribe(s => currentOrderType = s.orderType);
+
+    let applicableDeals = $derived(deals.filter(d => {
+        if (!currentOrderType) return d.type === 'both' || d.type === 'delivery'; // Default 
+        if (d.type === 'both') return true;
+        if (currentOrderType === 'delivery' && d.type === 'delivery') return true;
+        if (currentOrderType === 'pickup' && d.type === 'takeaway') return true;
+        return false;
+    }));
 </script>
 
 <svelte:head>
-    <title>Menu — Pizza Mania</title>
+    <title>Menu — {$settings?.restaurant_name || 'Pizza Mania'}</title>
 </svelte:head>
 
 <div class={cn('menu-page', currentIsDineIn && 'menu-page-dinein')}>
@@ -149,6 +173,36 @@
                 </button>
             </div>
         </div>
+
+        <!-- Applicable Deals Section -->
+        {#if applicableDeals.length > 0 && !searchQuery && activeCategory === categories[0]?.id}
+            <div class="deals-section animate-fadeIn">
+                <div class="deals-header">
+                    <h2 class="section-title">Special Offers</h2>
+                    <span class="deals-badge">Available for {currentOrderType === 'pickup' ? 'Takeaway' : 'Delivery'}</span>
+                </div>
+                <div class={layout === 'grid' ? 'menu-grid' : 'menu-list'}>
+                    {#each applicableDeals as deal (deal.id)}
+                        <button class={cn("menu-card glass deal-card", layout === 'list' && "list-item")} onclick={() => openDealModal(deal)}>
+                            <div class="menu-card-img deal-img-bg">
+                                <div class="deal-badge">Offer</div>
+                            </div>
+                            <div class="menu-card-body">
+                                <h3>{deal.title}</h3>
+                                <p>{deal.description?.substring(0, 60) || ''}...</p>
+                                <div class="menu-card-footer">
+                                    <span class="price"><span class="currency">€</span>{deal.price.toFixed(2)}</span>
+                                    <div class="add-btn deal-add-btn">
+                                        <Plus size={20} />
+                                    </div>
+                                </div>
+                            </div>
+                        </button>
+                    {/each}
+                </div>
+                <div class="section-divider"></div>
+            </div>
+        {/if}
 
         <!-- Category Pills -->
         <div class="category-pills">
@@ -462,9 +516,70 @@
 
     /* Menu Grid & List */
     .menu-items-container {
+        flex: 1;
         padding: var(--space-4);
+        padding-bottom: 120px;
+        position: relative;
     }
 
+    .deals-section {
+        margin-bottom: var(--space-8);
+    }
+
+    .deals-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: var(--space-4);
+    }
+
+    .deals-badge {
+        font-size: var(--text-xs);
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        padding: 4px 10px;
+        background: rgba(230, 57, 70, 0.1);
+        color: var(--color-primary);
+        border: 1px solid rgba(230, 57, 70, 0.2);
+        border-radius: var(--radius-full);
+    }
+
+    .deal-card {
+        border-color: rgba(230, 57, 70, 0.3) !important;
+        background: linear-gradient(135deg, rgba(230, 57, 70, 0.05), rgba(0, 0, 0, 0.2)) !important;
+    }
+
+    .deal-img-bg {
+        background: linear-gradient(135deg, var(--color-bg-secondary), var(--color-primary-dark));
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .deal-badge {
+        background: var(--color-primary);
+        color: white;
+        font-weight: 900;
+        font-size: 14px;
+        padding: 6px 14px;
+        border-radius: var(--radius-sm);
+        transform: rotate(-5deg);
+        box-shadow: var(--shadow-md);
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+    }
+
+    .deal-add-btn {
+        background: var(--color-primary) !important;
+        border-color: var(--color-primary) !important;
+    }
+
+    .section-divider {
+        height: 1px;
+        background: var(--color-border);
+        margin: var(--space-8) 0 var(--space-4);
+    }
     .menu-grid {
         display: grid;
         grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));

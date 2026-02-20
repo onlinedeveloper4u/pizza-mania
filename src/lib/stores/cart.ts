@@ -12,6 +12,8 @@ const initialState: CartState = {
     tableId: null,
     tableNumber: null,
     orderType: null,
+    deliveryAddress: null,
+    scheduledAt: null,
 };
 
 // ============================================================
@@ -96,6 +98,10 @@ function setOrderType(orderType: OrderType) {
     cartStore.update((state) => ({ ...state, orderType }));
 }
 
+function setOrderDetails({ address, scheduledAt }: { address?: string; scheduledAt?: string | null }) {
+    cartStore.update((state) => ({ ...state, deliveryAddress: address ?? state.deliveryAddress, scheduledAt: scheduledAt !== undefined ? scheduledAt : state.scheduledAt }));
+}
+
 function clearCart() {
     cartStore.set(initialState);
 }
@@ -123,6 +129,7 @@ export const cart = {
     updateQuantity,
     setTable,
     setOrderType,
+    setOrderDetails,
     clearCart,
     itemCount,
     subtotal,

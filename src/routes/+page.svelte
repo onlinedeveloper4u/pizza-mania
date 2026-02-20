@@ -2,14 +2,22 @@
     import { goto } from '$app/navigation';
     import { Truck, Store, Clock, Ticket, Search } from 'lucide-svelte';
     import { cart } from '$lib/stores/cart';
+    import { cn } from '$lib/utils';
+    import { settings } from '$lib/stores/settings';
     import type { OrderType } from '$lib/types';
     import LocationModal from '$lib/components/LocationModal.svelte';
+    import PickupModal from '$lib/components/PickupModal.svelte';
 
     let showLocationModal = $state(false);
+    let showPickupModal = $state(false);
 
     function selectOrderType(type: OrderType) {
         if (type === 'delivery') {
             showLocationModal = true;
+            return;
+        }
+        if (type === 'pickup') {
+            showPickupModal = true;
             return;
         }
         cart.setOrderType(type);
@@ -17,14 +25,20 @@
     }
 
     function handleLocationConfirm(data: any) {
-        // Here we could store the address in the cart or a separate store
         cart.setOrderType('delivery');
+        cart.setOrderDetails({ address: data.address, scheduledAt: data.scheduledAt });
+        goto('/menu');
+    }
+
+    function handlePickupConfirm(data: any) {
+        cart.setOrderType('pickup');
+        cart.setOrderDetails({ address: data.address, scheduledAt: data.scheduledAt });
         goto('/menu');
     }
 </script>
 
 <svelte:head>
-    <title>Pizza Mania — Order Now</title>
+    <title>{$settings?.restaurant_name || 'Pizza Mania'} — Order Now</title>
 </svelte:head>
 
 <div class="home">
@@ -33,7 +47,11 @@
     <div class="home-content">
         <!-- Logo -->
         <div class="home-logo">
-            <img src="/logo.png" alt="Pizza Mania" class="home-logo-img" />
+            {#if $settings?.logo_url}
+                <img src={$settings.logo_url} alt={$settings?.restaurant_name || 'Pizza Mania'} class="home-logo-img" />
+            {:else}
+                <h1 class="home-logo-text">{$settings?.restaurant_name || 'Pizza Mania'}</h1>
+            {/if}
         </div>
 
         <p class="home-tagline">How would you like your order?</p>
@@ -97,6 +115,11 @@
         bind:show={showLocationModal} 
         onConfirm={handleLocationConfirm}
     />
+
+    <PickupModal
+        bind:show={showPickupModal}
+        onConfirm={handlePickupConfirm}
+    />
 </div>
 
 <style>
@@ -139,6 +162,15 @@
         width: auto;
         object-fit: contain;
         mix-blend-mode: lighten;
+    }
+
+    .home-logo-text {
+        font-family: var(--font-display);
+        font-size: 3.5rem;
+        font-weight: var(--weight-bold);
+        color: var(--color-primary);
+        line-height: 1.1;
+        margin-bottom: var(--space-2);
     }
 
     .home-tagline {

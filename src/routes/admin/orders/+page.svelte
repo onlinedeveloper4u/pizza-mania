@@ -1,5 +1,6 @@
 <script lang="ts">
     import { onMount, onDestroy } from 'svelte';
+    import { settings } from '$lib/stores/settings';
     import { createClient } from '$lib/supabase/client';
     import type { OrderWithItems, OrderStatus } from '$lib/types';
     import { ORDER_STATUS_LABELS, ORDER_TYPE_LABELS, ORDER_STATUS_FLOW } from '$lib/constants';
@@ -67,7 +68,7 @@
     ];
 </script>
 
-<svelte:head><title>Orders — Pizza Mania Admin</title></svelte:head>
+<svelte:head><title>Orders — {$settings?.restaurant_name || 'Pizza Mania'} Admin</title></svelte:head>
 
 <div>
     <div class="admin-topbar"><h1>Orders</h1></div>

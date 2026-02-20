@@ -6,9 +6,14 @@
     import { APP_NAME } from '$lib/constants';
     import { cn } from '$lib/utils';
     import type { Profile } from '$lib/types';
-    import { LayoutDashboard, ShoppingBag, BookOpen, Grid3x3, ChefHat, LogOut, Loader2, Ticket } from 'lucide-svelte';
+    import { LayoutDashboard, ShoppingBag, BookOpen, Grid3x3, ChefHat, LogOut, Loader2, Ticket, Settings } from 'lucide-svelte';
+    import { settings } from '$lib/stores/settings';
     
     let { children } = $props();
+
+    onMount(() => {
+        settings.fetch();
+    });
 
     let profile = $state<Profile | null>(null);
     let loading = $state(true);
@@ -61,6 +66,7 @@
         { href: '/admin/menu', label: 'Menu', icon: BookOpen },
         { href: '/admin/offers', label: 'Offers', icon: Ticket },
         { href: '/admin/tables', label: 'Tables', icon: Grid3x3 },
+        { href: '/admin/settings', label: 'Settings', icon: Settings },
     ];
 
     const chefLinks = [
@@ -81,7 +87,11 @@
         <aside class="sidebar">
             <div class="sidebar-header">
                 <div class="sidebar-logo">
-                    <img src="/logo.png" alt="{APP_NAME}" class="sidebar-logo-img" />
+                    {#if $settings?.logo_url}
+                        <img src={$settings.logo_url} alt={$settings?.restaurant_name || APP_NAME} class="sidebar-logo-img" />
+                    {:else}
+                        <span class="sidebar-logo-text">{$settings?.restaurant_name || APP_NAME}</span>
+                    {/if}
                 </div>
             </div>
 
@@ -165,6 +175,13 @@
         mix-blend-mode: lighten;
     }
 
+    .sidebar-logo-text {
+        font-family: var(--font-display);
+        font-size: var(--text-2xl);
+        font-weight: var(--weight-bold);
+        color: var(--color-primary);
+    }
+
     .sidebar-nav {
         flex: 1;
         padding: var(--space-4) var(--space-3);
@@ -246,6 +263,7 @@
         flex: 1;
         margin-left: var(--sidebar-width, 260px);
         padding: var(--space-8);
+        min-width: 0;
     }
 
     @media (max-width: 1024px) {

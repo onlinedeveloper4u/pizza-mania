@@ -3,6 +3,7 @@
     import { ShoppingCart, UtensilsCrossed, Ticket } from 'lucide-svelte';
     import { cart } from '$lib/stores/cart';
     import { cn } from '$lib/utils';
+    import { settings } from '$lib/stores/settings';
 
     let scrolled = $state(false);
 
@@ -32,7 +33,11 @@
         <div class="header-left">
 
             <a href="/" class="logo">
-                <img src="/logo.png" alt="Pizza Mania" class="logo-img" />
+                {#if $settings?.logo_url}
+                    <img src={$settings.logo_url} alt={$settings?.restaurant_name || 'Pizza Mania'} class="logo-img" />
+                {:else}
+                    <span class="logo-text">{$settings?.restaurant_name || 'Pizza Mania'}</span>
+                {/if}
             </a>
         </div>
 

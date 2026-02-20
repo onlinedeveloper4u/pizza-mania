@@ -4,10 +4,11 @@
 
 import type { OrderStatus, OrderType } from '$lib/types';
 
+// Branding Defaults (Source of Truth is restaurant_settings table)
 export const APP_NAME = 'Pizza Mania';
 export const APP_TAGLINE = 'Crafted with Passion, Served with Love';
 export const CURRENCY_SYMBOL = '€';
-export const DELIVERY_FEE = 2.50;
+export const DELIVERY_FEE = 3.99;
 
 // Order Settings
 export const MIN_ORDER_AMOUNT = 15.00;
@@ -53,7 +54,7 @@ export const ORDER_STATUS_COLORS: Record<string, string> = {
     cancelled: '#E63946',
 };
 
-// Contact Info
+// Contact Defaults
 export const CONTACT_INFO = {
     address: "Rue puissant d\'Agimont 27, 6040 Jumet",
     phone: '+32470972953',

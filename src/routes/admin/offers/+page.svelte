@@ -1,5 +1,6 @@
 <script lang="ts">
     import { onMount } from 'svelte';
+    import { settings } from '$lib/stores/settings';
     import { Plus, Edit2, Trash2, Ticket } from 'lucide-svelte';
     import { createClient } from '$lib/supabase/client';
     import { formatPrice } from '$lib/utils';
@@ -49,7 +50,7 @@
     }
 </script>
 
-<svelte:head><title>Offers Management — Pizza Mania Admin</title></svelte:head>
+<svelte:head><title>Offers Management — {$settings?.restaurant_name || 'Pizza Mania'} Admin</title></svelte:head>
 
 <div>
     <div class="admin-topbar">

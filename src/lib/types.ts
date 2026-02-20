@@ -71,8 +71,8 @@ export interface Order {
     payment_method: PaymentMethod;
     payment_status: PaymentStatus;
     stripe_session_id: string | null;
-    special_instructions: string | null;
     estimated_minutes: number | null;
+    scheduled_time: string | null;
     confirmed_by: string | null;
     created_at: string;
     updated_at: string;
@@ -109,6 +109,7 @@ export interface RestaurantSettings {
     avg_prep_minutes: number;
     accepting_orders: boolean;
     currency: string;
+    logo_url: string | null;
 }
 
 export interface Profile {
@@ -151,6 +152,8 @@ export interface CartState {
     tableId: string | null;
     tableNumber: string | null;
     orderType: OrderType | null;
+    deliveryAddress?: string | null;
+    scheduledAt?: string | null;
 }
 
 // ============================================================
@@ -166,6 +169,7 @@ export interface CreateOrderPayload {
     table_id?: string;
     payment_method: PaymentMethod;
     special_instructions?: string;
+    scheduled_time?: string | null;
     items: {
         menu_item_id: string;
         item_name: string;

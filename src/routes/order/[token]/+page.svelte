@@ -3,6 +3,8 @@
     import { page } from '$app/stores';
     import { Package, Clock, CheckCircle, ChefHat, Truck, Search, XCircle, UtensilsCrossed, Loader2 } from 'lucide-svelte';
     import { createClient } from '$lib/supabase/client';
+    import { settings } from '$lib/stores/settings';
+    import { cart } from '$lib/stores/cart';
     import type { OrderWithItems, OrderStatus } from '$lib/types';
     import { ORDER_STATUS_LABELS } from '$lib/constants';
     import { formatPrice, formatDateTime, timeAgo } from '$lib/utils';
@@ -87,7 +89,7 @@
 </script>
 
 <svelte:head>
-    <title>Track Order — Pizza Mania</title>
+    <title>Track Order — {$settings?.restaurant_name || 'Pizza Mania'}</title>
 </svelte:head>
 
 <div class="tracking-page">
@@ -122,6 +124,10 @@
                     <div class="status-sub">
                         {#if order.status === 'cancelled'}
                             This order has been cancelled
+                        {:else if order.scheduled_time}
+                            <span style="color:var(--color-warning);font-weight:var(--weight-bold);">
+                                Scheduled: {new Date(order.scheduled_time).toLocaleString('en-GB', { weekday: 'short', hour: '2-digit', minute: '2-digit' })}
+                            </span>
                         {:else if order.estimated_minutes}
                             Estimated: ~{order.estimated_minutes} minutes
                         {:else}

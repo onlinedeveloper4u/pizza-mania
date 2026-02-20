@@ -6,12 +6,16 @@
     import { goto } from '$app/navigation';
     import DealModal from '$lib/components/DealModal.svelte';
     import { createClient } from '$lib/supabase/client';
+    import { settings } from '$lib/stores/settings';
+    import { APP_NAME } from '$lib/constants';
+    import { toast } from 'svelte-sonner';
 
     // Type definition to avoid simple generic confusion in runoff
     type TabType = 'delivery' | 'takeaway';
     let activeTab = $state('delivery' as TabType);
     
     let email = $state('');
+    let submitting = $state(false);
     
     // Modal State
     let showDealModal = $state(false);
@@ -60,15 +64,40 @@
         showDealModal = true;
     }
 
-    function handleSubscribe() {
-        if (!email) return;
-        alert(`Subscribed ${email}!`);
-        email = '';
+    async function handleSubscribe() {
+        if (!email || !email.includes('@')) {
+            toast.error('Please enter a valid email address');
+            return;
+        }
+
+        try {
+            submitting = true;
+            const res = await fetch('/api/newsletter', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email })
+            });
+
+            const data = await res.json();
+
+            if (!res.ok) {
+                toast.error(data.error || 'Subscription failed');
+                return;
+            }
+
+            toast.success(data.message || 'Subscribed successfully!');
+            email = '';
+        } catch (err) {
+            console.error('Newsletter error:', err);
+            toast.error('Something went wrong. Please try again later.');
+        } finally {
+            submitting = false;
+        }
     }
 </script>
 
 <svelte:head>
-    <title>Local Offers — Pizza Mania Charleroi</title>
+    <title>Offers — {$settings?.restaurant_name || APP_NAME}</title>
 </svelte:head>
 
 <div class="offers-page">
@@ -76,8 +105,8 @@
     <header class="offers-header">
         <div class="container header-content">
             <div class="store-info">
-                <h1>Pizza Mania <span class="text-accent">Charleroi</span></h1>
-                <p class="city-badge"><MapPin size={14} /> Charleroi Center</p>
+                <h1>{$settings?.restaurant_name || APP_NAME}</h1>
+                <p class="city-badge"><MapPin size={14} /> {$settings?.address || 'Flavor Hub'}</p>
             </div>
             <a href="/" class="back-link">Back to Home</a>
         </div>
@@ -194,11 +223,11 @@
                 <a href="/privacy">Privacy Policy</a>
             </div>
             <div class="footer-contact">
-                <div class="contact-item"><Phone size={14} /> +32 71 12 34 56</div>
-                <div class="contact-item"><MapPin size={14} /> Rue de la Montagne 10, 6000 Charleroi</div>
+                <div class="contact-item"><Phone size={14} /> {$settings?.phone || ''}</div>
+                <div class="contact-item"><MapPin size={14} /> {$settings?.address || ''}</div>
             </div>
             <div class="copyright">
-                &copy; {new Date().getFullYear()} Pizza Mania Charleroi
+                &copy; {new Date().getFullYear()} {$settings?.restaurant_name || APP_NAME}
             </div>
         </div>
     </footer>

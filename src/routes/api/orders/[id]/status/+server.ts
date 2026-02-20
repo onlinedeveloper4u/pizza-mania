@@ -2,9 +2,10 @@ import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { createClient as createServerClient } from '$lib/supabase/server';
 import { createAdminClient } from '$lib/supabase/admin';
-import type { OrderStatus } from '$lib/types';
+import type { OrderStatus, OrderWithItems } from '$lib/types';
+import { sendOrderStatusEmail } from '$lib/server/email';
 
-export const PATCH: RequestHandler = async ({ request, params, cookies }) => {
+export const PATCH: RequestHandler = async ({ request, params, cookies, url }) => {
     const { id } = params;
 
     try {
@@ -26,16 +27,25 @@ export const PATCH: RequestHandler = async ({ request, params, cookies }) => {
             return json({ error: 'Forbidden' }, { status: 403 });
         }
 
-        const { status } = await request.json();
+        const { status: newStatus } = await request.json();
 
-        if (!status) {
+        if (!newStatus) {
             return json({ error: 'Status is required' }, { status: 400 });
         }
 
         const adminSupabase = createAdminClient();
 
-        const isTerminalStatus = ['delivered', 'picked_up', 'served'].includes(status);
-        const updateData: Record<string, unknown> = { status: status as OrderStatus };
+        // 0. Fetch previous status to detect transitions
+        const { data: oldOrder } = await adminSupabase
+            .from('orders')
+            .select('status')
+            .eq('id', id)
+            .single();
+
+        const previousStatus = oldOrder?.status;
+
+        const isTerminalStatus = ['delivered', 'picked_up', 'served'].includes(newStatus);
+        const updateData: Record<string, unknown> = { status: newStatus as OrderStatus };
         if (isTerminalStatus) {
             updateData.payment_status = 'paid';
         }
@@ -55,11 +65,14 @@ export const PATCH: RequestHandler = async ({ request, params, cookies }) => {
         // 2. Add to status history
         await adminSupabase.from('order_status_history').insert({
             order_id: id,
-            status: status as OrderStatus,
+            status: newStatus as OrderStatus,
             changed_by: session.user.id,
         });
 
-
+        // 3. Send email update (Smart logic inside function)
+        if (order.customer_email) {
+            sendOrderStatusEmail(order as OrderWithItems, order.customer_email, url.origin, previousStatus).catch(console.error);
+        }
 
         return json({ success: true, status: order.status });
     } catch (error) {

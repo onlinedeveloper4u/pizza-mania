@@ -1,10 +1,11 @@
 <script lang="ts">
     import { onMount, onDestroy } from 'svelte';
-    import { ShoppingBag, Clock, AlertTriangle, DollarSign } from 'lucide-svelte';
+    import { ShoppingBag, Clock, AlertTriangle, DollarSign, ArrowLeft } from 'lucide-svelte';
     import { createClient } from '$lib/supabase/client';
     import type { Order, OrderWithItems, OrderStatus } from '$lib/types';
     import { ORDER_STATUS_LABELS, ORDER_TYPE_LABELS, ORDER_STATUS_FLOW } from '$lib/constants';
     import { formatPrice, timeAgo, cn } from '$lib/utils';
+    import { settings } from '$lib/stores/settings';
 
     let stats = $state({ totalOrders: 0, activeOrders: 0, revenue: 0, avgPrepTime: 30 });
     let recentOrders = $state<OrderWithItems[]>([]);
@@ -69,9 +70,15 @@
         const idx = flow.indexOf(order.status as OrderStatus);
         return idx >= 0 && idx < flow.length - 1 ? flow[idx + 1] : null;
     }
+
+    function getPrevStatus(order: Order): OrderStatus | null {
+        const flow = ORDER_STATUS_FLOW[order.order_type] || [];
+        const idx = flow.indexOf(order.status as OrderStatus);
+        return idx > 0 ? flow[idx - 1] : null;
+    }
 </script>
 
-<svelte:head><title>Dashboard — Pizza Mania Admin</title></svelte:head>
+<svelte:head><title>Dashboard — {$settings?.restaurant_name || 'Pizza Mania'} Admin</title></svelte:head>
 
 <div>
     <div class="admin-topbar">
@@ -121,7 +128,7 @@
             <table>
                 <thead>
                     <tr>
-                        <th>Order</th><th>Type</th><th>Customer</th><th>Items</th><th>Total</th><th>Status</th><th>Time</th><th>Actions</th>
+                        <th>Order</th><th>Type</th><th>Customer</th><th>Items</th><th>Total</th><th>Status</th><th>Scheduled</th><th>Time</th><th>Actions</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -147,14 +154,32 @@
                                     {ORDER_STATUS_LABELS[order.status]}
                                 </span>
                             </td>
+                            <td>
+                                {#if order.scheduled_time}
+                                    <span class="badge badge-warning" style="font-size: 11px;">
+                                        {new Date(order.scheduled_time).toLocaleString('en-GB', { weekday: 'short', hour: '2-digit', minute: '2-digit' })}
+                                    </span>
+                                {:else}
+                                    <span style="color:var(--color-text-muted);font-size:var(--text-xs)">ASAP</span>
+                                {/if}
+                            </td>
                             <td style="color:var(--color-text-muted);font-size:var(--text-xs)">{timeAgo(order.created_at)}</td>
                             <td>
-                                <div class="order-actions">
-                                    {#if nextStatus}
-                                        <button class="btn btn-primary btn-sm" onclick={() => updateStatus(order.id, nextStatus)}>
-                                            {ORDER_STATUS_LABELS[nextStatus]}
-                                        </button>
-                                    {/if}
+                                    {@const next = getNextStatus(order)}
+                                    {@const prev = getPrevStatus(order)}
+                                    
+                                    <div class="order-actions">
+                                        {#if prev}
+                                            <button class="btn btn-ghost btn-sm" style="padding:4px" onclick={() => updateStatus(order.id, prev)} title="Move Back to {ORDER_STATUS_LABELS[prev]}">
+                                                <ArrowLeft size={16} />
+                                            </button>
+                                        {/if}
+
+                                        {#if next}
+                                            <button class="btn btn-primary btn-sm" onclick={() => updateStatus(order.id, next)}>
+                                                {ORDER_STATUS_LABELS[next]}
+                                            </button>
+                                        {/if}
                                     {#if order.status === 'new'}
                                         <button class="btn btn-ghost btn-sm" style="color:var(--color-danger)" onclick={() => updateStatus(order.id, 'cancelled')}>
                                             Cancel

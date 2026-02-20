@@ -1,5 +1,6 @@
 <script lang="ts">
     import { onMount } from 'svelte';
+    import { settings } from '$lib/stores/settings';
     import { Plus, Edit2, Trash2, QrCode, ToggleLeft, ToggleRight, Download } from 'lucide-svelte';
     import { createClient } from '$lib/supabase/client';
     import type { Table } from '$lib/types';
@@ -60,7 +61,7 @@
     }
 </script>
 
-<svelte:head><title>Tables — Pizza Mania Admin</title></svelte:head>
+<svelte:head><title>Tables — {$settings?.restaurant_name || 'Pizza Mania'} Admin</title></svelte:head>
 
 <div>
     <div class="admin-topbar">

@@ -1,5 +1,6 @@
 <script lang="ts">
     import { UtensilsCrossed, Minus, Plus, Trash2, ShoppingBag, ArrowRight } from 'lucide-svelte';
+    import { settings } from '$lib/stores/settings';
     import { cart } from '$lib/stores/cart';
     import { formatPrice } from '$lib/utils';
     import { DELIVERY_FEE } from '$lib/constants';
@@ -20,7 +21,7 @@
 </script>
 
 <svelte:head>
-    <title>Cart — Pizza Mania</title>
+    <title>Cart — {$settings?.restaurant_name || 'Pizza Mania'}</title>
 </svelte:head>
 
 <div class="cart-page">
