@@ -345,12 +345,12 @@
             <div
                 class="modal-content glass"
                 role="dialog"
+                tabindex="-1"
                 onclick={(e) => e.stopPropagation()}
                 onkeydown={() => {}}
             >
                 <header class="modal-header">
                     <div class="sheet-handle"></div>
-                    <h2>{selectedItem.name}</h2>
                     <button
                         class="close-btn"
                         onclick={() => (selectedItem = null)}
@@ -375,10 +375,51 @@
                 </header>
 
                 <div class="modal-body">
+                    <h2 class="modal-title">{selectedItem.name}</h2>
                     {#if selectedItem.description}
                         <div class="modal-desc">{selectedItem.description}</div>
                     {/if}
                     <div class="modal-price">{formatPrice(modalPrice)}</div>
+
+                    <div class="modal-sections-divider"></div>
+
+                    <!-- Quantity & Instructions -->
+                    <div class="modal-section">
+                        <div class="quantity-row">
+                            <span class="label" style="margin-bottom: 0;"
+                                >Quantity</span
+                            >
+                            <div class="quantity-controls">
+                                <button
+                                    class="quantity-btn"
+                                    onclick={() =>
+                                        (quantity = Math.max(1, quantity - 1))}
+                                >
+                                    <Minus size={16} />
+                                </button>
+                                <span class="quantity-value">{quantity}</span>
+                                <button
+                                    class="quantity-btn"
+                                    onclick={() => quantity++}
+                                >
+                                    <Plus size={16} />
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="notes-field">
+                            <label class="label" for="special-notes"
+                                >Special Instructions</label
+                            >
+                            <textarea
+                                id="special-notes"
+                                class="input"
+                                placeholder="Any special requests?"
+                                bind:value={notes}
+                                rows="2"
+                            ></textarea>
+                        </div>
+                    </div>
 
                     <div class="modal-sections-divider"></div>
 
@@ -441,43 +482,6 @@
                             {/each}
                         </div>
                     {/if}
-
-                    <div class="modal-sections-divider"></div>
-
-                    <!-- Quantity & Instructions -->
-                    <div class="modal-section">
-                        <div class="quantity-row">
-                            <span class="label" style="margin-bottom: 0;"
-                                >Quantity</span
-                            >
-                            <div class="quantity-controls">
-                                <button
-                                    class="quantity-btn"
-                                    onclick={() =>
-                                        (quantity = Math.max(1, quantity - 1))}
-                                >
-                                    <Minus size={16} />
-                                </button>
-                                <span class="quantity-value">{quantity}</span>
-                                <button
-                                    class="quantity-btn"
-                                    onclick={() => quantity++}
-                                >
-                                    <Plus size={16} />
-                                </button>
-                            </div>
-                        </div>
-
-                        <div class="notes-field">
-                            <label class="label">Special Instructions</label>
-                            <textarea
-                                class="input"
-                                placeholder="Any special requests?"
-                                bind:value={notes}
-                                rows="2"
-                            ></textarea>
-                        </div>
-                    </div>
                 </div>
 
                 <footer class="modal-footer">
@@ -485,7 +489,7 @@
                         class="btn btn-primary btn-lg add-to-cart-btn"
                         onclick={handleAddToCart}
                     >
-                        Add — {formatPrice(modalPrice * quantity)}
+                        Add to Cart — {formatPrice(modalPrice * quantity)}
                     </button>
                 </footer>
             </div>
@@ -908,7 +912,7 @@
     .menu-card-price {
         font-size: var(--text-lg);
         font-weight: var(--weight-bold);
-        color: var(--color-primary);
+        color: var(--color-gold);
     }
 
     .menu-list .menu-card-price {
@@ -965,7 +969,7 @@
         width: 100%;
         height: 100%;
         max-height: 100%;
-        border-radius: 0;
+        border-radius: var(--radius-3xl) var(--radius-3xl) 0 0;
         overflow: hidden;
         display: flex;
         flex-direction: column;
@@ -995,15 +999,7 @@
     }
 
     .modal-header h2 {
-        position: absolute;
-        bottom: var(--space-4);
-        left: var(--space-5);
-        color: white;
-        font-family: var(--font-display);
-        font-size: var(--text-2xl);
-        font-weight: 800;
-        z-index: 3;
-        text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+        display: none;
     }
 
     .sheet-handle {
@@ -1082,6 +1078,14 @@
         background: var(--color-border);
         margin: var(--space-4) 0;
         opacity: 0.5;
+    }
+
+    .modal-title {
+        font-family: var(--font-display);
+        font-size: var(--text-2xl);
+        font-weight: 800;
+        color: var(--color-text-primary);
+        margin-bottom: var(--space-2);
     }
 
     .modal-desc {
