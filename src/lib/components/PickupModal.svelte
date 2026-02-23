@@ -122,21 +122,35 @@
         display: flex;
         justify-content: center;
         align-items: center;
-        padding: var(--space-4);
-        overflow-y: auto;
+    }
+
+    @media (min-width: 768px) {
+        .modal-overlay {
+            padding: var(--space-4);
+        }
     }
 
     .modal-content {
         background: var(--color-bg-secondary);
         width: 100%;
-        max-width: 480px;
-        max-height: 90vh;
-        border-radius: var(--radius-2xl);
+        height: 100%;
+        max-height: 100%;
+        border-radius: 0;
         display: flex;
         flex-direction: column;
-        border: 1px solid var(--color-border);
-        box-shadow: 0 30px 60px -12px rgba(0, 0, 0, 0.7);
+        border: none;
         overflow: hidden;
+    }
+
+    @media (min-width: 768px) {
+        .modal-content {
+            max-width: 480px;
+            height: auto;
+            max-height: 90vh;
+            border-radius: var(--radius-2xl);
+            border: 1px solid var(--color-border);
+            box-shadow: 0 30px 60px -12px rgba(0, 0, 0, 0.7);
+        }
     }
 
     .modal-header {

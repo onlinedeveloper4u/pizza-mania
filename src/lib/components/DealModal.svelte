@@ -229,22 +229,36 @@
         z-index: var(--z-modal);
         display: flex;
         justify-content: center;
-        align-items: center; /* Center on mobile too for consistency if desired, or keep as bottom sheet */
-        padding: var(--space-4);
-        overflow-y: auto;
+        align-items: center; 
+    }
+
+    @media (min-width: 768px) {
+        .modal-overlay {
+            padding: var(--space-4);
+        }
     }
 
     .modal-content {
         background: var(--color-bg-secondary);
         width: 100%;
-        max-width: 600px;
-        height: 85vh; /* Fixed height on mobile */
-        border-radius: var(--radius-2xl) var(--radius-2xl) 0 0;
+        height: 100%;
+        max-height: 100%;
+        border-radius: 0;
         display: flex;
         flex-direction: column;
-        border: 1px solid var(--color-border);
-        box-shadow: 0 -10px 40px rgba(0,0,0,0.5);
+        border: none;
+        box-shadow: none;
         overflow: hidden;
+    }
+
+    @media (min-width: 768px) {
+        .modal-content {
+            max-width: 1000px;
+            height: 85vh;
+            border-radius: var(--radius-2xl);
+            border: 1px solid var(--color-border);
+            box-shadow: 0 30px 60px -12px rgba(0, 0, 0, 0.7);
+        }
     }
 
     /* Header */
