@@ -954,7 +954,7 @@
         backdrop-filter: blur(8px);
         z-index: 1000;
         display: flex;
-        align-items: center;
+        align-items: flex-end; /* Bottom sheet align */
         justify-content: center;
     }
 
@@ -969,7 +969,7 @@
         width: 100%;
         height: 100%;
         max-height: 100%;
-        border-radius: var(--radius-3xl) var(--radius-3xl) 0 0;
+        border-radius: 22px 22px 0 0;
         overflow: hidden;
         display: flex;
         flex-direction: column;
