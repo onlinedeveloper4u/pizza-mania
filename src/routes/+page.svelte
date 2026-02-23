@@ -220,11 +220,19 @@
         <!-- Top: Branding + CTA -->
         <div class="hero-top">
             <div class="hero-logo">
-                <h1 class="hero-logo-text">
-                    <span class="hero-name-line"
-                        >{$settings?.restaurant_name || "Pizza Mania"}</span
-                    >
-                </h1>
+                {#if $settings?.logo_url}
+                    <img
+                        src={$settings.logo_url}
+                        alt={$settings?.restaurant_name || "Pizza Mania"}
+                        class="hero-logo-img"
+                    />
+                {:else}
+                    <h1 class="hero-logo-text">
+                        <span class="hero-name-line"
+                            >{$settings?.restaurant_name || "Pizza Mania"}</span
+                        >
+                    </h1>
+                {/if}
                 <div class="hero-logo-glow"></div>
             </div>
 
@@ -999,6 +1007,16 @@
         margin-bottom: var(--space-4);
         position: relative;
         animation: heroFadeIn 0.8s ease-out;
+    }
+
+    .hero-logo-img {
+        height: auto;
+        width: 100%;
+        max-width: 480px;
+        object-fit: contain;
+        position: relative;
+        z-index: 2;
+        filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.5));
     }
 
     .hero-logo-text {

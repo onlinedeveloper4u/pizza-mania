@@ -35,19 +35,9 @@
     <div class="header-inner">
         <!-- Left: Logo -->
         <div class="header-left">
-            <a href="/" class="logo">
-                {#if $settings?.logo_url}
-                    <img
-                        src={$settings.logo_url}
-                        alt={$settings?.restaurant_name || "Pizza Mania"}
-                        class="logo-img"
-                    />
-                {:else}
-                    <span class="logo-text"
-                        >{$settings?.restaurant_name || "Pizza Mania"}</span
-                    >
-                {/if}
-            </a>
+            <span class="logo">
+                <span class="logo-text"></span>
+            </span>
         </div>
 
         <!-- Right: Cart + Menu Toggle -->
@@ -140,14 +130,6 @@
         display: flex;
         align-items: center;
         text-decoration: none;
-    }
-
-    .logo-img {
-        height: 54px;
-        width: auto;
-        object-fit: contain;
-        mix-blend-mode: lighten;
-        filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.6));
     }
 
     .logo-text {
