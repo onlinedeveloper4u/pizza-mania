@@ -33,6 +33,16 @@
     import LocationModal from "$lib/components/LocationModal.svelte";
     import PickupModal from "$lib/components/PickupModal.svelte";
     import { CONTACT_INFO } from "$lib/constants";
+    import { createClient } from "$lib/supabase/client";
+
+    interface LandingMedia {
+        id: string;
+        category: string;
+        media_type: string;
+        url: string;
+        title: string;
+        caption: string;
+    }
 
     let showLocationModal = $state(false);
     let showPickupModal = $state(false);
@@ -68,28 +78,8 @@
         },
     ];
 
-    const galleryImages = [
-        {
-            src: "/images/pizzeria-interior.png",
-            alt: "Elegant dining area with warm lighting",
-            label: "Our Dining Room",
-        },
-        {
-            src: "/images/pizzeria-exterior.png",
-            alt: "Charming pizzeria exterior at night",
-            label: "Our Location",
-        },
-        {
-            src: "/images/wood-fired-oven.png",
-            alt: "Pizza fresh from wood-fired oven",
-            label: "Wood-Fired Oven",
-        },
-        {
-            src: "/images/fresh-ingredients.png",
-            alt: "Fresh ingredients on cutting board",
-            label: "Fresh Ingredients",
-        },
-    ];
+    let craftMedia = $state<LandingMedia[]>([]);
+    let ambianceMedia = $state<LandingMedia[]>([]);
 
     const eventTypes = [
         {
@@ -114,10 +104,31 @@
         },
     ];
 
-    onMount(() => {
+    onMount(async () => {
         testimonialInterval = setInterval(() => {
             currentTestimonial = (currentTestimonial + 1) % testimonials.length;
         }, 5000);
+
+        // Fetch dynamic media
+        try {
+            const supabase = createClient();
+            const { data } = await supabase
+                .from("landing_media")
+                .select("id, category, media_type, url, title, caption")
+                .order("created_at", { ascending: true });
+
+            if (data) {
+                craftMedia = data.filter(
+                    (m: LandingMedia) => m.category === "craft",
+                );
+                ambianceMedia = data.filter(
+                    (m: LandingMedia) => m.category === "ambiance",
+                );
+            }
+        } catch (err) {
+            console.error("Failed to load landing media:", err);
+        }
+
         return () => clearInterval(testimonialInterval);
     });
 
@@ -455,46 +466,69 @@
 
             <div class="prep-showcase">
                 <!-- Large Hero Image -->
-                <div class="prep-hero">
-                    <img
-                        src="/images/pizza-preparation.png"
-                        alt="Pizza artisan stretching dough"
-                        class="prep-hero-img"
-                    />
-                    <div class="prep-hero-overlay">
-                        <h3>The Art of Dough</h3>
-                        <p>
-                            Hand-stretched with care, aged for 48 hours for the
-                            perfect texture
-                        </p>
+                {#if craftMedia.length > 0}
+                    <div class="prep-hero">
+                        {#if craftMedia[0].media_type === "video"}
+                            <video
+                                src={craftMedia[0].url}
+                                class="prep-hero-img"
+                                autoplay
+                                muted
+                                loop
+                                playsinline
+                            >
+                                <track kind="captions" />
+                            </video>
+                        {:else}
+                            <img
+                                src={craftMedia[0].url}
+                                alt={craftMedia[0].caption ||
+                                    craftMedia[0].title}
+                                class="prep-hero-img"
+                            />
+                        {/if}
+                        <div class="prep-hero-overlay">
+                            <h3>{craftMedia[0].title || "The Art of Dough"}</h3>
+                            {#if craftMedia[0].caption}
+                                <p>{craftMedia[0].caption}</p>
+                            {/if}
+                        </div>
                     </div>
-                </div>
+                {/if}
 
                 <!-- Side Grid -->
-                <div class="prep-details">
-                    <div class="prep-card">
-                        <img
-                            src="/images/fresh-ingredients.png"
-                            alt="Fresh ingredients"
-                            class="prep-card-img"
-                        />
-                        <div class="prep-card-overlay">
-                            <h4>Fresh Ingredients</h4>
-                            <p>Sourced daily from local markets</p>
-                        </div>
+                {#if craftMedia.length > 1}
+                    <div class="prep-details">
+                        {#each craftMedia.slice(1) as item}
+                            <div class="prep-card">
+                                {#if item.media_type === "video"}
+                                    <video
+                                        src={item.url}
+                                        class="prep-card-img"
+                                        autoplay
+                                        muted
+                                        loop
+                                        playsinline
+                                    >
+                                        <track kind="captions" />
+                                    </video>
+                                {:else}
+                                    <img
+                                        src={item.url}
+                                        alt={item.caption || item.title}
+                                        class="prep-card-img"
+                                    />
+                                {/if}
+                                <div class="prep-card-overlay">
+                                    <h4>{item.title}</h4>
+                                    {#if item.caption}
+                                        <p>{item.caption}</p>
+                                    {/if}
+                                </div>
+                            </div>
+                        {/each}
                     </div>
-                    <div class="prep-card">
-                        <img
-                            src="/images/wood-fired-oven.png"
-                            alt="Wood-fired oven"
-                            class="prep-card-img"
-                        />
-                        <div class="prep-card-overlay">
-                            <h4>Wood-Fired at 450°C</h4>
-                            <p>90 seconds for the perfect char</p>
-                        </div>
-                    </div>
-                </div>
+                {/if}
             </div>
 
             <div class="prep-stats">
@@ -536,19 +570,32 @@
             </div>
 
             <div class="gallery-grid">
-                {#each galleryImages as img, i}
+                {#each ambianceMedia as item, i}
                     <div
                         class="gallery-item"
                         class:gallery-item-large={i === 0}
                     >
-                        <img
-                            src={img.src}
-                            alt={img.alt}
-                            class="gallery-img"
-                            loading="lazy"
-                        />
+                        {#if item.media_type === "video"}
+                            <video
+                                src={item.url}
+                                class="gallery-img"
+                                autoplay
+                                muted
+                                loop
+                                playsinline
+                            >
+                                <track kind="captions" />
+                            </video>
+                        {:else}
+                            <img
+                                src={item.url}
+                                alt={item.caption || item.title}
+                                class="gallery-img"
+                                loading="lazy"
+                            />
+                        {/if}
                         <div class="gallery-overlay">
-                            <span class="gallery-label">{img.label}</span>
+                            <span class="gallery-label">{item.title}</span>
                         </div>
                     </div>
                 {/each}
