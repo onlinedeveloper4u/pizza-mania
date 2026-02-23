@@ -1,7 +1,7 @@
 <script lang="ts">
-    import { Instagram, Facebook, Twitter } from 'lucide-svelte';
-    import { APP_TAGLINE } from '$lib/constants';
-    import { settings } from '$lib/stores/settings';
+    import { Instagram, Facebook, Twitter } from "lucide-svelte";
+    import { APP_TAGLINE } from "$lib/constants";
+    import { settings } from "$lib/stores/settings";
 </script>
 
 <footer class="footer">
@@ -9,22 +9,41 @@
         <div class="footer-brand">
             <div class="footer-logo">
                 {#if $settings?.logo_url}
-                    <img src={$settings.logo_url} alt={$settings?.restaurant_name || 'Pizza Mania'} class="footer-logo-img" />
+                    <img
+                        src={$settings.logo_url}
+                        alt={$settings?.restaurant_name || "Pizza Mania"}
+                        class="footer-logo-img"
+                    />
                 {:else}
-                    <h3 class="footer-logo-text">{$settings?.restaurant_name || 'Pizza Mania'}</h3>
+                    <h3 class="footer-logo-text">
+                        {$settings?.restaurant_name || "Pizza Mania"}
+                    </h3>
                 {/if}
             </div>
             <p class="footer-desc">
-                {APP_TAGLINE}. Experience the finest flavors crafted by our passionate chefs.
+                {APP_TAGLINE}. Experience the finest flavors crafted by our
+                passionate chefs.
             </p>
             <div class="footer-socials">
-                <a href="https://www.instagram.com/" target="_blank" aria-label="Instagram">
+                <a
+                    href="https://www.instagram.com/"
+                    target="_blank"
+                    aria-label="Instagram"
+                >
                     <Instagram size={20} />
                 </a>
-                <a href="https://www.facebook.com/" target="_blank" aria-label="Facebook">
+                <a
+                    href="https://www.facebook.com/"
+                    target="_blank"
+                    aria-label="Facebook"
+                >
                     <Facebook size={20} />
                 </a>
-                <a href="https://www.twitter.com/" target="_blank" aria-label="Twitter">
+                <a
+                    href="https://www.twitter.com/"
+                    target="_blank"
+                    aria-label="Twitter"
+                >
                     <Twitter size={20} />
                 </a>
             </div>
@@ -35,6 +54,7 @@
                 <li><a href="/menu">Menu</a></li>
                 <li><a href="/offers">Offers</a></li>
                 <li><a href="/order">Track Order</a></li>
+                <li><a href="/#events">Book an Event</a></li>
             </ul>
         </div>
         <div class="footer-links">
@@ -49,10 +69,16 @@
             <h4>Contact</h4>
             <ul>
                 {#if $settings?.phone}
-                    <li><a href={`tel:${$settings.phone}`}>{$settings.phone}</a></li>
+                    <li>
+                        <a href={`tel:${$settings.phone}`}>{$settings.phone}</a>
+                    </li>
                 {/if}
                 {#if $settings?.email}
-                    <li><a href={`mailto:${$settings.email}`}>{$settings.email}</a></li>
+                    <li>
+                        <a href={`mailto:${$settings.email}`}
+                            >{$settings.email}</a
+                        >
+                    </li>
                 {/if}
                 {#if $settings?.address}
                     <li>{$settings.address}</li>
@@ -62,10 +88,15 @@
     </div>
     <div class="footer-bottom">
         <p>
-            © {new Date().getFullYear()} {$settings?.restaurant_name || 'Pizza Mania'}. All rights reserved.
+            © {new Date().getFullYear()}
+            {$settings?.restaurant_name || "Pizza Mania"}. All rights reserved.
         </p>
         <p>
-            {$settings?.address || ''} {#if $settings?.address && $settings?.phone} | {/if} {$settings?.phone || ''}
+            {$settings?.address || ""}
+            {#if $settings?.address && $settings?.phone}
+                |
+            {/if}
+            {$settings?.phone || ""}
         </p>
     </div>
 </footer>

@@ -1,9 +1,9 @@
 <script lang="ts">
-    import { page } from '$app/stores';
-    import { ShoppingCart, UtensilsCrossed, Ticket } from 'lucide-svelte';
-    import { cart } from '$lib/stores/cart';
-    import { cn } from '$lib/utils';
-    import { settings } from '$lib/stores/settings';
+    import { page } from "$app/stores";
+    import { ShoppingCart, UtensilsCrossed, Ticket } from "lucide-svelte";
+    import { cart } from "$lib/stores/cart";
+    import { cn } from "$lib/utils";
+    import { settings } from "$lib/stores/settings";
 
     let scrolled = $state(false);
 
@@ -12,12 +12,11 @@
     let currentIsDineIn: boolean = $state(false);
     let currentTableNumber: string | null = $state(null);
 
-    cart.itemCount.subscribe(v => currentItemCount = v);
-    cart.isDineIn.subscribe(v => currentIsDineIn = v);
-    cart.subscribe(s => currentTableNumber = s.tableNumber);
+    cart.itemCount.subscribe((v) => (currentItemCount = v));
+    cart.isDineIn.subscribe((v) => (currentIsDineIn = v));
+    cart.subscribe((s) => (currentTableNumber = s.tableNumber));
 
-    let isHome = $derived(currentPath === '/');
-
+    let isHome = $derived(currentPath === "/");
 
     function handleScroll() {
         scrolled = window.scrollY > 20;
@@ -26,17 +25,27 @@
 
 <svelte:window onscroll={handleScroll} />
 
-{#if !isHome}
-<header class={cn('header', (scrolled || !isHome) && 'header-scrolled')}>
+<header
+    class={cn(
+        "header",
+        scrolled && "header-scrolled",
+        isHome && !scrolled && "header-transparent",
+    )}
+>
     <div class="header-inner">
-        <!-- Left: Back button or Logo -->
+        <!-- Left: Logo -->
         <div class="header-left">
-
             <a href="/" class="logo">
                 {#if $settings?.logo_url}
-                    <img src={$settings.logo_url} alt={$settings?.restaurant_name || 'Pizza Mania'} class="logo-img" />
+                    <img
+                        src={$settings.logo_url}
+                        alt={$settings?.restaurant_name || "Pizza Mania"}
+                        class="logo-img"
+                    />
                 {:else}
-                    <span class="logo-text">{$settings?.restaurant_name || 'Pizza Mania'}</span>
+                    <span class="logo-text"
+                        >{$settings?.restaurant_name || "Pizza Mania"}</span
+                    >
                 {/if}
             </a>
         </div>
@@ -62,7 +71,6 @@
         Table #{currentTableNumber} — Dine-in
     </div>
 {/if}
-{/if}
 
 <style>
     .header {
@@ -73,6 +81,11 @@
         height: var(--header-height);
         z-index: var(--z-sticky);
         transition: all var(--transition-base);
+    }
+
+    .header-transparent {
+        background: transparent;
+        border-bottom: none;
     }
 
     .header-scrolled {
@@ -206,8 +219,6 @@
         justify-content: center;
         gap: var(--space-2);
     }
-
-
 
     .nav-link {
         padding: var(--space-2) var(--space-4);
