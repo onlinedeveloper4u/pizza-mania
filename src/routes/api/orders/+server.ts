@@ -75,7 +75,8 @@ export const POST: RequestHandler = async ({ request, url }) => {
         // Insert order items
         const orderItems = payload.items.map((item) => ({
             order_id: order.id,
-            menu_item_id: item.menu_item_id,
+            menu_item_id: item.menu_item_id || null,
+            deal_id: (item as any).deal_id || null,
             item_name: item.item_name,
             item_price: item.item_price,
             quantity: item.quantity,

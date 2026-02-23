@@ -81,7 +81,8 @@ export interface Order {
 export interface OrderItem {
     id: string;
     order_id: string;
-    menu_item_id: string;
+    menu_item_id: string | null;
+    deal_id?: string | null;
     item_name: string;
     item_price: number;
     quantity: number;
@@ -171,7 +172,8 @@ export interface CreateOrderPayload {
     special_instructions?: string;
     scheduled_time?: string | null;
     items: {
-        menu_item_id: string;
+        menu_item_id: string | null;
+        deal_id?: string | null;
         item_name: string;
         item_price: number;
         quantity: number;

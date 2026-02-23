@@ -79,14 +79,18 @@
                 payment_method: paymentMethod,
                 special_instructions: specialInstructions.trim() || undefined,
                 scheduled_time: cartState.scheduledAt || undefined,
-                items: cartState.items.map(item => ({
-                    menu_item_id: item.menuItem.id,
-                    item_name: item.menuItem.name,
-                    item_price: item.unitPrice,
-                    quantity: item.quantity,
-                    selected_options: item.selectedOptions,
-                    notes: item.notes || undefined,
-                })),
+                items: cartState.items.map(item => {
+                    const isDeal = item.id.startsWith('deal-');
+                    return {
+                        menu_item_id: isDeal ? null : item.menuItem.id,
+                        deal_id: isDeal ? (item.menuItem.id || null) : null,
+                        item_name: item.menuItem.name,
+                        item_price: item.unitPrice,
+                        quantity: item.quantity,
+                        selected_options: item.selectedOptions,
+                        notes: item.notes || undefined,
+                    };
+                }),
             };
 
             const res = await fetch('/api/orders', {
