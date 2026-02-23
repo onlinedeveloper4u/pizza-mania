@@ -226,28 +226,8 @@
                         alt={$settings?.restaurant_name || "Pizza Mania"}
                         class="hero-logo-img"
                     />
-                {:else}
-                    <h1 class="hero-logo-text">
-                        <span class="hero-name-line"
-                            >{$settings?.restaurant_name || "Pizza Mania"}</span
-                        >
-                    </h1>
                 {/if}
                 <div class="hero-logo-glow"></div>
-            </div>
-
-            <div class="hero-tagline-wrapper">
-                <span class="tagline-decoration"></span>
-                <p class="hero-tagline">
-                    Crafted with Passion, Served with Love
-                </p>
-                <span class="tagline-decoration"></span>
-            </div>
-
-            <div class="hero-badges">
-                <span class="hero-badge-pill">🍕 Pizza</span>
-                <span class="hero-badge-pill">🍝 Pasta</span>
-                <span class="hero-badge-pill">🥐 Breakfast</span>
             </div>
         </div>
 
@@ -996,54 +976,35 @@
         position: relative;
         z-index: 1;
         display: flex;
-        flex-direction: column;
-        align-items: center;
+        justify-content: center; /* horizontal center */
+        align-items: center; /* vertical center */
+        padding: 0;
+        margin: 0;
         text-align: center;
-        padding: calc(var(--header-height) + var(--space-8)) var(--space-6)
-            var(--space-4);
     }
 
     .hero-logo {
-        margin-bottom: var(--space-4);
-        position: relative;
-        animation: heroFadeIn 0.8s ease-out;
+        width: 100%;
+        margin: 0;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        line-height: 0; /* removes inline gap */
     }
 
     .hero-logo-img {
-        height: 100px;
-        width: 100%;
-        max-width: 480px;
+        width: 80%;
+        max-width: 80%;
+        height: auto;
+        display: block;
         object-fit: contain;
-        position: relative;
-        z-index: 2;
         filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.5));
     }
 
-    .hero-logo-text {
-        font-family: var(--font-display);
-        font-size: 3.2rem;
-        font-weight: 800;
-        line-height: 1.05;
-        letter-spacing: -0.02em;
-        -webkit-text-stroke: 0.5px rgba(255, 255, 255, 0.3);
-    }
-
-    .hero-name-line {
-        background: linear-gradient(
-            135deg,
-            #ffffff 0%,
-            #ffd6a0 25%,
-            #ffffff 50%,
-            #ffc078 75%,
-            #ffffff 100%
-        );
-        background-size: 200% auto;
-        -webkit-background-clip: text;
-        background-clip: text;
-        -webkit-text-fill-color: transparent;
-        animation: shimmerText 4s ease-in-out infinite;
-        filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.7))
-            drop-shadow(0 0 30px rgba(0, 0, 0, 0.4));
+    @media (min-width: 768px) {
+        .hero-logo-img {
+            max-width: 520px; /* adjust if needed */
+        }
     }
 
     @keyframes shimmerText {
