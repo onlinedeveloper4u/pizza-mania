@@ -1,44 +1,50 @@
 <script lang="ts">
-    import { goto } from '$app/navigation';
-    import { Truck, Store, Clock, Ticket, Search } from 'lucide-svelte';
-    import { cart } from '$lib/stores/cart';
-    import { cn } from '$lib/utils';
-    import { settings } from '$lib/stores/settings';
-    import type { OrderType } from '$lib/types';
-    import LocationModal from '$lib/components/LocationModal.svelte';
-    import PickupModal from '$lib/components/PickupModal.svelte';
+    import { goto } from "$app/navigation";
+    import { Truck, Store, Clock, Ticket, Search } from "lucide-svelte";
+    import { cart } from "$lib/stores/cart";
+    import { cn } from "$lib/utils";
+    import { settings } from "$lib/stores/settings";
+    import type { OrderType } from "$lib/types";
+    import LocationModal from "$lib/components/LocationModal.svelte";
+    import PickupModal from "$lib/components/PickupModal.svelte";
 
     let showLocationModal = $state(false);
     let showPickupModal = $state(false);
 
     function selectOrderType(type: OrderType) {
-        if (type === 'delivery') {
+        if (type === "delivery") {
             showLocationModal = true;
             return;
         }
-        if (type === 'pickup') {
+        if (type === "pickup") {
             showPickupModal = true;
             return;
         }
         cart.setOrderType(type);
-        goto('/menu');
+        goto("/menu");
     }
 
     function handleLocationConfirm(data: any) {
-        cart.setOrderType('delivery');
-        cart.setOrderDetails({ address: data.address, scheduledAt: data.scheduledAt });
-        goto('/menu');
+        cart.setOrderType("delivery");
+        cart.setOrderDetails({
+            address: data.address,
+            scheduledAt: data.scheduledAt,
+        });
+        goto("/menu");
     }
 
     function handlePickupConfirm(data: any) {
-        cart.setOrderType('pickup');
-        cart.setOrderDetails({ address: data.address, scheduledAt: data.scheduledAt });
-        goto('/menu');
+        cart.setOrderType("pickup");
+        cart.setOrderDetails({
+            address: data.address,
+            scheduledAt: data.scheduledAt,
+        });
+        goto("/menu");
     }
 </script>
 
 <svelte:head>
-    <title>{$settings?.restaurant_name || 'Pizza Mania'} — Order Now</title>
+    <title>{$settings?.restaurant_name || "Pizza Mania"} — Order Now</title>
 </svelte:head>
 
 <div class="home">
@@ -48,9 +54,15 @@
         <!-- Logo -->
         <div class="home-logo">
             {#if $settings?.logo_url}
-                <img src={$settings.logo_url} alt={$settings?.restaurant_name || 'Pizza Mania'} class="home-logo-img" />
+                <img
+                    src={$settings.logo_url}
+                    alt={$settings?.restaurant_name || "Pizza Mania"}
+                    class="home-logo-img"
+                />
             {:else}
-                <h1 class="home-logo-text">{$settings?.restaurant_name || 'Pizza Mania'}</h1>
+                <h1 class="home-logo-text">
+                    {$settings?.restaurant_name || "Pizza Mania"}
+                </h1>
             {/if}
         </div>
 
@@ -58,7 +70,10 @@
 
         <!-- Order Type Cards -->
         <div class="order-cards">
-            <button class="order-card delivery-card" onclick={() => selectOrderType('delivery')}>
+            <button
+                class="order-card delivery-card"
+                onclick={() => selectOrderType("delivery")}
+            >
                 <div class="order-card-icon delivery-icon">
                     <Truck size={32} />
                 </div>
@@ -72,7 +87,10 @@
                 </div>
             </button>
 
-            <button class="order-card pickup-card" onclick={() => selectOrderType('pickup')}>
+            <button
+                class="order-card pickup-card"
+                onclick={() => selectOrderType("pickup")}
+            >
                 <div class="order-card-icon pickup-icon">
                     <Store size={32} />
                 </div>
@@ -111,15 +129,12 @@
         </p>
     </div>
 
-    <LocationModal 
-        bind:show={showLocationModal} 
+    <LocationModal
+        bind:show={showLocationModal}
         onConfirm={handleLocationConfirm}
     />
 
-    <PickupModal
-        bind:show={showPickupModal}
-        onConfirm={handlePickupConfirm}
-    />
+    <PickupModal bind:show={showPickupModal} onConfirm={handlePickupConfirm} />
 </div>
 
 <style>
@@ -137,10 +152,21 @@
         position: absolute;
         inset: 0;
         z-index: -1;
-        background:
-            radial-gradient(ellipse at 50% 30%, rgba(230, 57, 70, 0.12) 0%, transparent 60%),
-            radial-gradient(ellipse at 50% 80%, rgba(255, 107, 53, 0.08) 0%, transparent 50%),
-            linear-gradient(180deg, var(--color-bg-primary) 0%, var(--color-bg-secondary) 100%);
+        background: radial-gradient(
+                ellipse at 50% 30%,
+                rgba(230, 57, 70, 0.12) 0%,
+                transparent 60%
+            ),
+            radial-gradient(
+                ellipse at 50% 80%,
+                rgba(255, 107, 53, 0.08) 0%,
+                transparent 50%
+            ),
+            linear-gradient(
+                180deg,
+                var(--color-bg-primary) 0%,
+                var(--color-bg-secondary) 100%
+            );
     }
 
     .home-content {
