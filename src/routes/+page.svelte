@@ -1010,7 +1010,7 @@
     }
 
     .hero-logo-img {
-        height: auto;
+        height: 100px;
         width: 100%;
         max-width: 480px;
         object-fit: contain;
