@@ -1,40 +1,60 @@
 <script lang="ts">
-    import { X, MapPin, Navigation, Calendar, Clock, ChevronRight, Search, LocateFixed, Loader2 } from 'lucide-svelte';
-    import { cn } from '$lib/utils';
-    import { fade, scale, slide } from 'svelte/transition';
-    import { createClient } from '$lib/supabase/client';
-    import { env } from '$env/dynamic/public';
-    import { settings } from '$lib/stores/settings';
+    import {
+        X,
+        MapPin,
+        Navigation,
+        Calendar,
+        Clock,
+        ChevronRight,
+        Search,
+        LocateFixed,
+        Loader2,
+    } from "lucide-svelte";
+    import { cn } from "$lib/utils";
+    import { fade, scale, slide } from "svelte/transition";
+    import { createClient } from "$lib/supabase/client";
+    import { env } from "$env/dynamic/public";
+    import { settings } from "$lib/stores/settings";
 
     let { show = $bindable(false), onConfirm } = $props();
 
-    let address = $state('');
-    let searchInput = $state('');
-    let searchResults = $state<{ title: string, subtitle: string, placeId?: string }[]>([]);
+    let address = $state("");
+    let searchInput = $state("");
+    let searchResults = $state<
+        { title: string; subtitle: string; placeId?: string }[]
+    >([]);
     let isSearching = $state(false);
     let showResults = $state(false);
-    let deliveryTime: 'now' | 'later' = $state('now');
-    let selectedDate = $state(new Date().toISOString().split('T')[0]);
-    let selectedTime = $state(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false }));
-    
+    let deliveryTime: "now" | "later" = $state("now");
+    let selectedDate = $state(new Date().toISOString().split("T")[0]);
+    let selectedTime = $state(
+        new Date().toLocaleTimeString([], {
+            hour: "2-digit",
+            minute: "2-digit",
+            hour12: false,
+        }),
+    );
+
     let isLocating = $state(false);
     let mapMoved = $state(false);
     let searchTimeout: any;
-    
+
     let dateInput: HTMLInputElement | undefined = $state();
     let timeInput: HTMLInputElement | undefined = $state();
-    
+
     // Body Scroll Lock
     $effect(() => {
         if (show) {
-            const originalStyle = window.getComputedStyle(document.body).overflow;
-            document.body.style.overflow = 'hidden';
+            const originalStyle = window.getComputedStyle(
+                document.body,
+            ).overflow;
+            document.body.style.overflow = "hidden";
             return () => {
                 document.body.style.overflow = originalStyle;
             };
         }
     });
-    
+
     let googleMapsLoaded = $state(false);
     let placesLibrary: any;
     let geocoder: any;
@@ -48,7 +68,46 @@
         }
 
         // The recommended modern inline bootstrap loader
-        (g=>{var h,a,k,p="The Google Maps JavaScript API",c="google",l="importLibrary",q="__ib__",m=document,b=window;b=b[c]||(b[c]={});const d=b.maps||(b.maps={}),r=new Set,e=new URLSearchParams,u=()=>h||(h=new Promise(async(f,n)=>{await (a=m.createElement("script"));e.set("libraries",[...r]+"");for(k in g)e.set(k.replace(/[A-Z]/g,t=>"_"+t[0].toLowerCase()),g[k]);e.set("callback",c+".maps."+q);a.src=`https://maps.${c}apis.com/maps/api/js?`+e;d[q]=f;a.onerror=()=>h=n(Error(p+" could not load."));a.nonce=m.querySelector("script[nonce]")?.nonce||"";m.head.append(a)}));d[l]?console.warn(p+" only loads once. Ignoring:",g):d[l]=(f,...n)=>r.add(f)&&u().then(()=>d[l](f,...n))})({
+        ((g) => {
+            var h,
+                a,
+                k,
+                p = "The Google Maps JavaScript API",
+                c = "google",
+                l = "importLibrary",
+                q = "__ib__",
+                m = document,
+                b = window;
+            b = b[c] || (b[c] = {});
+            const d = b.maps || (b.maps = {}),
+                r = new Set(),
+                e = new URLSearchParams(),
+                u = () =>
+                    h ||
+                    (h = new Promise(async (f, n) => {
+                        await (a = m.createElement("script"));
+                        e.set("libraries", [...r] + "");
+                        for (k in g)
+                            e.set(
+                                k.replace(
+                                    /[A-Z]/g,
+                                    (t) => "_" + t[0].toLowerCase(),
+                                ),
+                                g[k],
+                            );
+                        e.set("callback", c + ".maps." + q);
+                        a.src = `https://maps.${c}apis.com/maps/api/js?` + e;
+                        d[q] = f;
+                        a.onerror = () =>
+                            (h = n(Error(p + " could not load.")));
+                        a.nonce = m.querySelector("script[nonce]")?.nonce || "";
+                        m.head.append(a);
+                    }));
+            d[l]
+                ? console.warn(p + " only loads once. Ignoring:", g)
+                : (d[l] = (f, ...n) =>
+                      r.add(f) && u().then(() => d[l](f, ...n)));
+        })({
             key: env.PUBLIC_GOOGLE_MAPS_API_KEY,
             v: "weekly",
         });
@@ -63,31 +122,34 @@
             // @ts-ignore
             const { Geocoder } = await google.maps.importLibrary("geocoding");
             geocoder = new Geocoder();
-            
+
             // @ts-ignore
             const { Map } = await google.maps.importLibrary("maps");
             if (mapElement) {
                 map = new Map(mapElement, {
                     center: { lat: 50.41, lng: 4.44 }, // Charleroi generic
                     zoom: 13,
-                    mapId: 'DEMO_MAP_ID',
+                    mapId: "DEMO_MAP_ID",
                     disableDefaultUI: true,
-                    gestureHandling: 'greedy'
+                    gestureHandling: "greedy",
                 });
 
-                map.addListener('dragend', () => {
+                map.addListener("dragend", () => {
                     if (!geocoder) return;
                     const center = map.getCenter();
-                    geocoder.geocode({ location: center }, (results: any, status: any) => {
-                        if (status === 'OK' && results[0]) {
-                            address = results[0].formatted_address;
-                            searchInput = results[0].formatted_address;
-                            mapMoved = true;
-                        }
-                    });
+                    geocoder.geocode(
+                        { location: center },
+                        (results: any, status: any) => {
+                            if (status === "OK" && results[0]) {
+                                address = results[0].formatted_address;
+                                searchInput = results[0].formatted_address;
+                                mapMoved = true;
+                            }
+                        },
+                    );
                 });
 
-                map.addListener('dragstart', () => {
+                map.addListener("dragstart", () => {
                     mapMoved = true;
                     showResults = false;
                 });
@@ -115,30 +177,32 @@
         try {
             // Using the modern AutocompleteSuggestion (Places API New)
             // If the user has "Places API (New)" enabled, this is the way.
-            const { AutocompleteSessionToken, AutocompleteSuggestion } = placesLibrary;
+            const { AutocompleteSessionToken, AutocompleteSuggestion } =
+                placesLibrary;
             const token = new AutocompleteSessionToken();
-            
+
             // Note: AutocompleteSuggestion is the recommended replacement for AutocompleteService
             // However, it might require a slightly different call or using the Place class.
-            // Let's try the modern Place.getAutocompletePredictions if available, 
+            // Let's try the modern Place.getAutocompletePredictions if available,
             // otherwise fallback to AutocompleteService (which still works for old projects).
-            
+
             if (placesLibrary.AutocompleteService) {
                 const service = new placesLibrary.AutocompleteService();
                 service.getPlacePredictions(
-                    { input: query, types: ['address'] },
+                    { input: query, types: ["address"] },
                     (predictions: any, status: any) => {
-                        if (status === 'OK' && predictions) {
+                        if (status === "OK" && predictions) {
                             searchResults = predictions.map((p: any) => ({
                                 title: p.structured_formatting.main_text,
-                                subtitle: p.structured_formatting.secondary_text,
-                                placeId: p.place_id
+                                subtitle:
+                                    p.structured_formatting.secondary_text,
+                                placeId: p.place_id,
                             }));
                         } else {
                             searchResults = [];
                         }
                         isSearching = false;
-                    }
+                    },
                 );
             }
         } catch (err) {
@@ -151,25 +215,33 @@
         const value = (e.target as HTMLInputElement).value;
         searchInput = value;
         showResults = true;
-        
+
         clearTimeout(searchTimeout);
         searchTimeout = setTimeout(() => performSearch(value), 400);
     }
 
-    function selectAddress(res: { title: string, subtitle: string, placeId?: string }) {
-        const fullAddress = res.title + (res.subtitle ? `, ${res.subtitle}` : '');
+    function selectAddress(res: {
+        title: string;
+        subtitle: string;
+        placeId?: string;
+    }) {
+        const fullAddress =
+            res.title + (res.subtitle ? `, ${res.subtitle}` : "");
         address = fullAddress;
         searchInput = fullAddress;
         showResults = false;
         mapMoved = true;
 
         if (res.placeId && geocoder && map) {
-            geocoder.geocode({ placeId: res.placeId }, (results: any, status: any) => {
-                if (status === 'OK' && results[0]) {
-                    map.panTo(results[0].geometry.location);
-                    map.setZoom(16);
-                }
-            });
+            geocoder.geocode(
+                { placeId: res.placeId },
+                (results: any, status: any) => {
+                    if (status === "OK" && results[0]) {
+                        map.panTo(results[0].geometry.location);
+                        map.setZoom(16);
+                    }
+                },
+            );
         }
     }
 
@@ -183,27 +255,30 @@
         navigator.geolocation.getCurrentPosition(
             async (pos) => {
                 const { latitude, longitude } = pos.coords;
-                
+
                 if (geocoder) {
-                    geocoder.geocode({ location: { lat: latitude, lng: longitude } }, (results: any, status: any) => {
-                        if (status === 'OK' && results[0]) {
-                            address = results[0].formatted_address;
-                            searchInput = results[0].formatted_address;
-                            mapMoved = true;
-                        } else {
-                            address = "Current Location Detected";
-                            searchInput = "Current Location Detected";
-                            mapMoved = true;
-                        }
+                    geocoder.geocode(
+                        { location: { lat: latitude, lng: longitude } },
+                        (results: any, status: any) => {
+                            if (status === "OK" && results[0]) {
+                                address = results[0].formatted_address;
+                                searchInput = results[0].formatted_address;
+                                mapMoved = true;
+                            } else {
+                                address = "Current Location Detected";
+                                searchInput = "Current Location Detected";
+                                mapMoved = true;
+                            }
 
-                        if (map) {
-                            map.panTo({ lat: latitude, lng: longitude });
-                            map.setZoom(16);
-                        }
+                            if (map) {
+                                map.panTo({ lat: latitude, lng: longitude });
+                                map.setZoom(16);
+                            }
 
-                        isLocating = false;
-                        showResults = false;
-                    });
+                            isLocating = false;
+                            showResults = false;
+                        },
+                    );
                 } else {
                     // Fallback to coordinates if geocoder failed or not loaded
                     address = `${latitude.toFixed(6)}, ${longitude.toFixed(6)}`;
@@ -221,28 +296,49 @@
                 isLocating = false;
                 console.error("Geolocation error:", err);
             },
-            { timeout: 10000 }
+            { timeout: 10000 },
         );
     }
 
     function handleStartOrder() {
         if (!address.trim()) return;
-        
+
         onConfirm({
             address,
             type: deliveryTime,
-            scheduledAt: deliveryTime === 'later' ? `${selectedDate} ${selectedTime}` : null
+            scheduledAt:
+                deliveryTime === "later"
+                    ? `${selectedDate} ${selectedTime}`
+                    : null,
         });
         show = false;
     }
 </script>
 
 {#if show}
-    <div class="modal-overlay" transition:fade={{ duration: 200 }} role="button" tabindex="-1" onclick={() => show = false} onkeydown={(e) => e.key === 'Escape' && (show = false)}>
-        <div class="modal-content glass" transition:scale={{ duration: 300, start: 0.95 }} role="dialog" tabindex="-1" onclick={(e) => e.stopPropagation()} onkeydown={(e) => e.key === 'Escape' && (show = false)}>
+    <div
+        class="modal-overlay"
+        transition:fade={{ duration: 200 }}
+        role="button"
+        tabindex="-1"
+        onclick={() => (show = false)}
+        onkeydown={(e) => e.key === "Escape" && (show = false)}
+    >
+        <div
+            class="modal-content glass"
+            transition:scale={{ duration: 300, start: 0.95 }}
+            role="dialog"
+            tabindex="-1"
+            onclick={(e) => e.stopPropagation()}
+            onkeydown={(e) => e.key === "Escape" && (show = false)}
+        >
             <header class="modal-header">
                 <h2>Confirm Your Location</h2>
-                <button class="close-btn" onclick={() => show = false} aria-label="Close">
+                <button
+                    class="close-btn"
+                    onclick={() => (show = false)}
+                    aria-label="Close"
+                >
                     <X size={24} strokeWidth={2} />
                 </button>
             </header>
@@ -250,17 +346,19 @@
             <div class="modal-body">
                 <!-- Address Section -->
                 <div class="form-section">
-                    <label class="input-label" for="address-input">Enter Delivery Address</label>
+                    <label class="input-label" for="address-input"
+                        >Enter Delivery Address</label
+                    >
                     <div class="search-wrapper">
                         <div class="input-container">
-                            <input 
+                            <input
                                 id="address-input"
-                                type="text" 
-                                class="main-address-input" 
-                                placeholder="Street, number, area..." 
+                                type="text"
+                                class="main-address-input"
+                                placeholder="Street, number, area..."
                                 value={searchInput}
                                 oninput={handleInput}
-                                onfocus={() => showResults = true}
+                                onfocus={() => (showResults = true)}
                             />
                             {#if isSearching}
                                 <div class="loading-icon animate-spin">
@@ -268,23 +366,42 @@
                                 </div>
                             {/if}
                             {#if searchInput.length > 0 && !isSearching}
-                                <button class="clear-input" onclick={() => { searchInput = ''; address = ''; searchResults = []; }} aria-label="Clear">
+                                <button
+                                    class="clear-input"
+                                    onclick={() => {
+                                        searchInput = "";
+                                        address = "";
+                                        searchResults = [];
+                                    }}
+                                    aria-label="Clear"
+                                >
                                     <X size={20} strokeWidth={2.5} />
                                 </button>
                             {/if}
                         </div>
 
                         {#if showResults && searchResults.length > 0}
-                            <div class="search-dropdown-overlay" onclick={() => showResults = false} role="presentation"></div>
+                            <div
+                                class="search-dropdown-overlay"
+                                onclick={() => (showResults = false)}
+                                role="presentation"
+                            ></div>
                             <div class="search-dropdown" transition:slide>
                                 {#each searchResults as res}
-                                    <button class="search-item" onclick={() => selectAddress(res)}>
+                                    <button
+                                        class="search-item"
+                                        onclick={() => selectAddress(res)}
+                                    >
                                         <div class="item-icon-box">
                                             <MapPin size={16} />
                                         </div>
                                         <div class="item-content">
-                                            <div class="item-title">{res.title}</div>
-                                            <div class="item-subtitle">{res.subtitle}</div>
+                                            <div class="item-title">
+                                                {res.title}
+                                            </div>
+                                            <div class="item-subtitle">
+                                                {res.subtitle}
+                                            </div>
                                         </div>
                                     </button>
                                 {/each}
@@ -296,12 +413,24 @@
                 <!-- Map Section (Domino's Layout + Dark Theme) -->
                 <div class="map-area">
                     <div class="map-graphic">
-                        <div bind:this={mapElement} class="map-instance-container"></div>
-                        <div class="map-grid" aria-hidden="true" style="pointer-events:none;"></div>
-                        
+                        <div
+                            bind:this={mapElement}
+                            class="map-instance-container"
+                        ></div>
+                        <div
+                            class="map-grid"
+                            aria-hidden="true"
+                            style="pointer-events:none;"
+                        ></div>
+
                         <!-- Floating Controls -->
                         <div class="map-controls">
-                            <button class="map-locate-btn" onclick={handleLocateMe} disabled={isLocating} aria-label="Locate me">
+                            <button
+                                class="map-locate-btn"
+                                onclick={handleLocateMe}
+                                disabled={isLocating}
+                                aria-label="Locate me"
+                            >
                                 {#if isLocating}
                                     <Loader2 size={20} class="animate-spin" />
                                 {:else}
@@ -311,7 +440,12 @@
                         </div>
 
                         <!-- Central Marker -->
-                        <div class="marker-container" style={mapMoved ? 'transform: translate(-50%, -65%)' : ''}>
+                        <div
+                            class="marker-container"
+                            style={mapMoved
+                                ? "transform: translate(-50%, -65%)"
+                                : ""}
+                        >
                             <div class="marker-pin-wrapper">
                                 <div class="marker-pin">
                                     <MapPin size={36} strokeWidth={3} />
@@ -320,10 +454,11 @@
                             </div>
                         </div>
                     </div>
-                    
+
                     <div class="map-info-footer">
                         <div class="map-store-badge">
-                            STORE: {$settings?.restaurant_name?.toUpperCase() || 'JUMET CENTRE'}
+                            STORE: {$settings?.restaurant_name?.toUpperCase() ||
+                                "JUMET CENTRE"}
                         </div>
                         <div class="map-footer-hint">
                             <Navigation size={14} />
@@ -345,18 +480,38 @@
                 <!-- Delivery Option Section -->
                 <div class="form-section time-section">
                     <h3 class="section-title">Schedule Order</h3>
-                    
+
                     <div class="time-radio-group">
-                        <label class={cn("time-card", deliveryTime === 'now' && "active")}>
-                            <input type="radio" name="order-time" value="now" bind:group={deliveryTime} />
+                        <label
+                            class={cn(
+                                "time-card",
+                                deliveryTime === "now" && "active",
+                            )}
+                        >
+                            <input
+                                type="radio"
+                                name="order-time"
+                                value="now"
+                                bind:group={deliveryTime}
+                            />
                             <div class="custom-radio"></div>
                             <div class="time-card-content">
                                 <span class="time-primary">Deliver Now</span>
                             </div>
                         </label>
 
-                        <label class={cn("time-card", deliveryTime === 'later' && "active")}>
-                            <input type="radio" name="order-time" value="later" bind:group={deliveryTime} />
+                        <label
+                            class={cn(
+                                "time-card",
+                                deliveryTime === "later" && "active",
+                            )}
+                        >
+                            <input
+                                type="radio"
+                                name="order-time"
+                                value="later"
+                                bind:group={deliveryTime}
+                            />
                             <div class="custom-radio"></div>
                             <div class="time-card-content">
                                 <span class="time-primary">Deliver Later</span>
@@ -364,26 +519,31 @@
                         </label>
                     </div>
 
-                    {#if deliveryTime === 'later'}
+                    {#if deliveryTime === "later"}
                         <div class="scheduled-picker" transition:slide>
                             <label class="picker-half">
                                 <Calendar size={18} class="picker-icon" />
-                                <span class="picker-val">{new Date(selectedDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })}</span>
-                                <input 
+                                <span class="picker-val"
+                                    >{new Date(selectedDate).toLocaleDateString(
+                                        "en-GB",
+                                        { day: "2-digit", month: "short" },
+                                    )}</span
+                                >
+                                <input
                                     bind:this={dateInput}
-                                    type="date" 
-                                    bind:value={selectedDate} 
-                                    min={new Date().toISOString().split('T')[0]} 
+                                    type="date"
+                                    bind:value={selectedDate}
+                                    min={new Date().toISOString().split("T")[0]}
                                 />
                             </label>
                             <div class="picker-divider"></div>
                             <label class="picker-half">
                                 <Clock size={18} class="picker-icon" />
                                 <span class="picker-val">{selectedTime}</span>
-                                <input 
+                                <input
                                     bind:this={timeInput}
-                                    type="time" 
-                                    bind:value={selectedTime} 
+                                    type="time"
+                                    bind:value={selectedTime}
                                 />
                             </label>
                         </div>
@@ -392,7 +552,11 @@
             </div>
 
             <footer class="modal-footer">
-                <button class="confirm-order-btn" onclick={handleStartOrder} disabled={!address.trim()}>
+                <button
+                    class="confirm-order-btn"
+                    onclick={handleStartOrder}
+                    disabled={!address.trim()}
+                >
                     <span>START ORDER</span>
                 </button>
             </footer>
@@ -535,7 +699,8 @@
         outline: none;
     }
 
-    .loading-icon, .clear-input {
+    .loading-icon,
+    .clear-input {
         position: absolute;
         right: var(--space-3);
         display: flex;
@@ -581,9 +746,15 @@
         position: absolute;
         inset: 0;
         background-color: transparent;
-        background-image: 
-            linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+        background-image: linear-gradient(
+                rgba(255, 255, 255, 0.03) 1px,
+                transparent 1px
+            ),
+            linear-gradient(
+                90deg,
+                rgba(255, 255, 255, 0.03) 1px,
+                transparent 1px
+            );
         background-size: 40px 40px;
         background-position: center center;
         z-index: 1;
@@ -674,8 +845,13 @@
     }
 
     @keyframes markerFloat {
-        0%, 100% { transform: translateY(0); }
-        50% { transform: translateY(-10px); }
+        0%,
+        100% {
+            transform: translateY(0);
+        }
+        50% {
+            transform: translateY(-10px);
+        }
     }
 
     .marker-pulse {
@@ -692,8 +868,14 @@
     }
 
     @keyframes pulse {
-        0% { transform: translate(-50%, -50%) scale(0.5); opacity: 1; }
-        100% { transform: translate(-50%, -50%) scale(2); opacity: 0; }
+        0% {
+            transform: translate(-50%, -50%) scale(0.5);
+            opacity: 1;
+        }
+        100% {
+            transform: translate(-50%, -50%) scale(2);
+            opacity: 0;
+        }
     }
 
     .map-footer-hint {
@@ -735,9 +917,13 @@
         position: relative;
     }
 
-    .time-card input { display: none; }
+    .time-card input {
+        display: none;
+    }
 
-    .time-card:hover { border-color: var(--color-border-hover); }
+    .time-card:hover {
+        border-color: var(--color-border-hover);
+    }
 
     .time-card.active {
         border-color: var(--color-primary);
@@ -757,10 +943,12 @@
         flex-shrink: 0;
     }
 
-    .active .custom-radio { border-color: var(--color-primary); }
+    .active .custom-radio {
+        border-color: var(--color-primary);
+    }
 
     .active .custom-radio::after {
-        content: '';
+        content: "";
         width: 12px;
         height: 12px;
         background: var(--color-primary);
@@ -829,8 +1017,12 @@
         margin: var(--space-2) 0;
     }
 
-    .picker-icon { color: var(--color-primary); }
-    .picker-val { font-size: var(--text-sm); }
+    .picker-icon {
+        color: var(--color-primary);
+    }
+    .picker-val {
+        font-size: var(--text-sm);
+    }
 
     /* Action Footer */
     .modal-footer {
@@ -842,7 +1034,11 @@
 
     .confirm-order-btn {
         width: 100%;
-        background: linear-gradient(135deg, var(--color-primary), var(--color-primary-dark));
+        background: linear-gradient(
+            135deg,
+            var(--color-primary),
+            var(--color-primary-dark)
+        );
         color: white;
         border: none;
         padding: 16px;
@@ -876,7 +1072,7 @@
         right: 0;
         background: var(--color-bg-secondary);
         border-radius: var(--radius-xl);
-        box-shadow: 0 20px 40px rgba(0,0,0,0.6);
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
         margin-top: 8px;
         overflow: hidden;
         border: 1px solid var(--color-border);
@@ -912,7 +1108,9 @@
         justify-content: center;
     }
 
-    .item-content { flex: 1; }
+    .item-content {
+        flex: 1;
+    }
 
     .item-title {
         font-weight: 800;

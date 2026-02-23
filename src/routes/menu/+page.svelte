@@ -1,44 +1,54 @@
 <script lang="ts">
-    import { onMount } from 'svelte';
-    import { Plus, Minus, X, UtensilsCrossed, ShoppingCart, Search, Check } from 'lucide-svelte';
-    import { settings } from '$lib/stores/settings';
-    import { createClient } from '$lib/supabase/client';
-    import { cart } from '$lib/stores/cart';
-    import type { Category, MenuItem, MenuItemOption } from '$lib/types';
-    import { formatPrice, cn, calculateItemPrice } from '$lib/utils';
-    import { toast } from 'svelte-sonner';
+    import { onMount } from "svelte";
+    import {
+        Plus,
+        Minus,
+        X,
+        UtensilsCrossed,
+        ShoppingCart,
+        Search,
+        Check,
+    } from "lucide-svelte";
+    import { settings } from "$lib/stores/settings";
+    import { createClient } from "$lib/supabase/client";
+    import { cart } from "$lib/stores/cart";
+    import type { Category, MenuItem, MenuItemOption } from "$lib/types";
+    import { formatPrice, cn, calculateItemPrice } from "$lib/utils";
+    import { toast } from "svelte-sonner";
 
     let categories: Category[] = $state([]);
     let menuItems: MenuItem[] = $state([]);
     let deals: any[] = $state([]);
     let activeCategory: string | null = $state(null);
-    let searchQuery = $state('');
+    let searchQuery = $state("");
     let selectedItem: MenuItem | null = $state(null);
     let loading = $state(true);
 
     // Modal state
     let quantity = $state(1);
     let selectedOptions: Record<string, string | string[]> = $state({});
-    let notes = $state('');
+    let notes = $state("");
 
     let currentItemCount = $state(0);
     let currentIsDineIn = $state(false);
-    cart.itemCount.subscribe(v => currentItemCount = v);
-    cart.isDineIn.subscribe(v => currentIsDineIn = v);
+    cart.itemCount.subscribe((v) => (currentItemCount = v));
+    cart.isDineIn.subscribe((v) => (currentIsDineIn = v));
 
-    let layout: 'grid' | 'list' = $state('grid');
+    let layout: "grid" | "list" = $state("grid");
 
     // Filtered items
     let filteredItems = $derived.by(() => {
         let items = menuItems;
         if (activeCategory) {
-            items = items.filter(item => item.category_id === activeCategory);
+            items = items.filter((item) => item.category_id === activeCategory);
         }
         if (searchQuery.trim()) {
             const q = searchQuery.toLowerCase();
             items = items.filter(
-                item => item.name.toLowerCase().includes(q) ||
-                    (item.description && item.description.toLowerCase().includes(q))
+                (item) =>
+                    item.name.toLowerCase().includes(q) ||
+                    (item.description &&
+                        item.description.toLowerCase().includes(q)),
             );
         }
         return items;
@@ -46,20 +56,39 @@
 
     // Modal price
     let modalPrice = $derived(
-        selectedItem ? calculateItemPrice(selectedItem.price, selectedOptions, selectedItem.options) : 0
+        selectedItem
+            ? calculateItemPrice(
+                  selectedItem.price,
+                  selectedOptions,
+                  selectedItem.options,
+              )
+            : 0,
     );
 
     onMount(async () => {
         const supabase = createClient();
         const [catRes, itemRes, dealsRes] = await Promise.all([
-            supabase.from('categories').select('*').eq('is_active', true).order('sort_order'),
-            supabase.from('menu_items').select('*').eq('is_available', true).order('name'),
-            supabase.from('deals').select('*').eq('is_active', true).order('sort_order', { ascending: true })
+            supabase
+                .from("categories")
+                .select("*")
+                .eq("is_active", true)
+                .order("sort_order"),
+            supabase
+                .from("menu_items")
+                .select("*")
+                .eq("is_available", true)
+                .order("name"),
+            supabase
+                .from("deals")
+                .select("*")
+                .eq("is_active", true)
+                .order("sort_order", { ascending: true }),
         ]);
         if (catRes.data) categories = catRes.data;
         if (itemRes.data) menuItems = itemRes.data;
         if (dealsRes.data) deals = dealsRes.data;
-        if (catRes.data && catRes.data.length > 0) activeCategory = catRes.data[0].id;
+        if (catRes.data && catRes.data.length > 0)
+            activeCategory = catRes.data[0].id;
         loading = false;
     });
 
@@ -67,18 +96,24 @@
         selectedItem = item;
         quantity = 1;
         selectedOptions = {};
-        notes = '';
+        notes = "";
     }
 
     function handleOptionChange(option: MenuItemOption, choiceName: string) {
-        if (option.type === 'single') {
+        if (option.type === "single") {
             selectedOptions = { ...selectedOptions, [option.name]: choiceName };
         } else {
             const current = (selectedOptions[option.name] as string[]) || [];
             if (current.includes(choiceName)) {
-                selectedOptions = { ...selectedOptions, [option.name]: current.filter(c => c !== choiceName) };
+                selectedOptions = {
+                    ...selectedOptions,
+                    [option.name]: current.filter((c) => c !== choiceName),
+                };
             } else {
-                selectedOptions = { ...selectedOptions, [option.name]: [...current, choiceName] };
+                selectedOptions = {
+                    ...selectedOptions,
+                    [option.name]: [...current, choiceName],
+                };
             }
         }
     }
@@ -104,52 +139,61 @@
         selectedItem = null;
     }
 
-    import DealModal from '$lib/components/DealModal.svelte';
-    let showDealModal = $state(false);
-    let selectedDeal: any = $state(null);
-
-    function openDealModal(deal: any) {
-        selectedDeal = deal;
-        showDealModal = true;
-    }
-
-    let currentOrderType = $state<'delivery' | 'pickup' | 'dine_in' | null>(null);
-    cart.subscribe(s => currentOrderType = s.orderType);
+    let currentOrderType = $state<"delivery" | "pickup" | "dine_in" | null>(
+        null,
+    );
+    cart.subscribe((s) => (currentOrderType = s.orderType));
 
     // Body Scroll Lock for Modal
     $effect(() => {
         if (selectedItem) {
-            const originalStyle = window.getComputedStyle(document.body).overflow;
-            document.body.style.overflow = 'hidden';
+            const originalStyle = window.getComputedStyle(
+                document.body,
+            ).overflow;
+            document.body.style.overflow = "hidden";
             return () => {
                 document.body.style.overflow = originalStyle;
             };
         }
     });
 
-    let applicableDeals = $derived(deals.filter(d => {
-        if (!currentOrderType) return d.type === 'both' || d.type === 'delivery'; // Default 
-        if (d.type === 'both') return true;
-        if (currentOrderType === 'delivery' && d.type === 'delivery') return true;
-        if (currentOrderType === 'pickup' && d.type === 'takeaway') return true;
-        return false;
-    }));
+    let applicableDeals = $derived(
+        deals.filter((d) => {
+            if (!currentOrderType)
+                return d.type === "both" || d.type === "delivery"; // Default
+            if (d.type === "both") return true;
+            if (currentOrderType === "delivery" && d.type === "delivery")
+                return true;
+            if (currentOrderType === "pickup" && d.type === "takeaway")
+                return true;
+            return false;
+        }),
+    );
 </script>
 
 <svelte:head>
-    <title>Menu — {$settings?.restaurant_name || 'Pizza Mania'}</title>
+    <title>Menu — {$settings?.restaurant_name || "Pizza Mania"}</title>
 </svelte:head>
 
-<div class={cn('menu-page', currentIsDineIn && 'menu-page-dinein')}>
+<div class={cn("menu-page", currentIsDineIn && "menu-page-dinein")}>
     {#if loading}
         <div class="menu-grid">
             {#each Array(6) as _}
                 <div class="menu-card">
                     <div class="skeleton" style="aspect-ratio: 16/10;"></div>
                     <div class="menu-card-body">
-                        <div class="skeleton" style="height: 18px; width: 60%; margin-bottom: 8px;"></div>
-                        <div class="skeleton" style="height: 14px; width: 100%; margin-bottom: 12px;"></div>
-                        <div class="skeleton" style="height: 22px; width: 30%;"></div>
+                        <div
+                            class="skeleton"
+                            style="height: 18px; width: 60%; margin-bottom: 8px;"
+                        ></div>
+                        <div
+                            class="skeleton"
+                            style="height: 14px; width: 100%; margin-bottom: 12px;"
+                        ></div>
+                        <div
+                            class="skeleton"
+                            style="height: 22px; width: 30%;"
+                        ></div>
                     </div>
                 </div>
             {/each}
@@ -164,20 +208,22 @@
                     class="search-input"
                     placeholder="Search dishes..."
                     bind:value={searchQuery}
-                    oninput={() => { if (searchQuery.trim()) activeCategory = null; }}
+                    oninput={() => {
+                        if (searchQuery.trim()) activeCategory = null;
+                    }}
                 />
             </div>
             <div class="layout-toggle">
-                <button 
-                    class={cn('toggle-btn', layout === 'grid' && 'active')} 
-                    onclick={() => layout = 'grid'}
+                <button
+                    class={cn("toggle-btn", layout === "grid" && "active")}
+                    onclick={() => (layout = "grid")}
                     aria-label="Grid View"
                 >
                     <div class="grid-icon"></div>
                 </button>
-                <button 
-                    class={cn('toggle-btn', layout === 'list' && 'active')} 
-                    onclick={() => layout = 'list'}
+                <button
+                    class={cn("toggle-btn", layout === "list" && "active")}
+                    onclick={() => (layout = "list")}
                     aria-label="List View"
                 >
                     <div class="list-icon"></div>
@@ -185,15 +231,19 @@
             </div>
         </div>
 
-
-
         <!-- Category Pills -->
         <div class="category-pills">
             <div class="category-pills-inner">
                 {#each categories as cat}
                     <button
-                        class={cn('pill', activeCategory === cat.id && 'pill-active')}
-                        onclick={() => { activeCategory = cat.id; searchQuery = ''; }}
+                        class={cn(
+                            "pill",
+                            activeCategory === cat.id && "pill-active",
+                        )}
+                        onclick={() => {
+                            activeCategory = cat.id;
+                            searchQuery = "";
+                        }}
                     >
                         {cat.name}
                     </button>
@@ -209,32 +259,55 @@
                 <p>Try a different search or category</p>
             </div>
         {:else}
-            <div class={cn('menu-items-container', layout === 'grid' ? 'menu-grid' : 'menu-list')}>
+            <div
+                class={cn(
+                    "menu-items-container",
+                    layout === "grid" ? "menu-grid" : "menu-list",
+                )}
+            >
                 {#each filteredItems as item}
                     <div
                         class="menu-card"
                         role="button"
                         tabindex="0"
                         onclick={() => openItemModal(item)}
-                        onkeydown={(e) => e.key === 'Enter' && openItemModal(item)}
+                        onkeydown={(e) =>
+                            e.key === "Enter" && openItemModal(item)}
                     >
                         {#if item.image_url}
-                            <img src={item.image_url} alt={item.name} class="menu-card-image" />
+                            <img
+                                src={item.image_url}
+                                alt={item.name}
+                                class="menu-card-image"
+                            />
                         {:else}
                             <div class="menu-card-image-placeholder">
-                                <UtensilsCrossed size={layout === 'list' ? 24 : 32} color="rgba(255,255,255,0.1)" />
+                                <UtensilsCrossed
+                                    size={layout === "list" ? 24 : 32}
+                                    color="rgba(255,255,255,0.1)"
+                                />
                             </div>
                         {/if}
                         <div class="menu-card-body">
                             <div class="menu-card-name">{item.name}</div>
                             {#if item.description}
-                                <div class="menu-card-desc" class:list-desc={layout === 'list'}>{item.description}</div>
+                                <div
+                                    class="menu-card-desc"
+                                    class:list-desc={layout === "list"}
+                                >
+                                    {item.description}
+                                </div>
                             {/if}
                             <div class="menu-card-footer">
-                                <div class="menu-card-price">{formatPrice(item.price)}</div>
+                                <div class="menu-card-price">
+                                    {formatPrice(item.price)}
+                                </div>
                                 <button
                                     class="add-btn"
-                                    onclick={(e) => { e.stopPropagation(); openItemModal(item); }}
+                                    onclick={(e) => {
+                                        e.stopPropagation();
+                                        openItemModal(item);
+                                    }}
                                     aria-label="Add {item.name}"
                                 >
                                     <Plus size={18} />
@@ -249,7 +322,10 @@
         <!-- Floating Cart Button -->
         {#if currentItemCount > 0}
             <div class="floating-cart">
-                <a href="/cart" class="btn btn-primary btn-lg floating-cart-btn">
+                <a
+                    href="/cart"
+                    class="btn btn-primary btn-lg floating-cart-btn"
+                >
                     <ShoppingCart size={18} />
                     View Cart ({currentItemCount})
                 </a>
@@ -259,25 +335,46 @@
 
     <!-- Item Detail Modal (Bottom Sheet on mobile) -->
     {#if selectedItem}
-        <div class="modal-overlay" role="button" tabindex="-1" onclick={() => selectedItem = null} onkeydown={(e) => e.key === 'Escape' && (selectedItem = null)}>
-            <div class="modal-sheet" role="dialog" onclick={(e) => e.stopPropagation()} onkeydown={() => {}}>
-                <!-- Sticky Header -->
-                <div class="modal-header-sticky">
+        <div
+            class="modal-overlay"
+            role="button"
+            tabindex="-1"
+            onclick={() => (selectedItem = null)}
+            onkeydown={(e) => e.key === "Escape" && (selectedItem = null)}
+        >
+            <div
+                class="modal-content glass"
+                role="dialog"
+                onclick={(e) => e.stopPropagation()}
+                onkeydown={() => {}}
+            >
+                <header class="modal-header">
                     <div class="sheet-handle"></div>
-                    <button class="modal-close" onclick={() => selectedItem = null}>
-                        <X size={18} />
+                    <h2>{selectedItem.name}</h2>
+                    <button
+                        class="close-btn"
+                        onclick={() => (selectedItem = null)}
+                        aria-label="Close"
+                    >
+                        <X size={24} />
                     </button>
                     {#if selectedItem.image_url}
-                        <img src={selectedItem.image_url} alt={selectedItem.name} class="modal-image" />
+                        <img
+                            src={selectedItem.image_url}
+                            alt={selectedItem.name}
+                            class="modal-image"
+                        />
                     {:else}
                         <div class="modal-image-placeholder">
-                            <UtensilsCrossed size={48} color="rgba(255,255,255,0.1)" />
+                            <UtensilsCrossed
+                                size={48}
+                                color="rgba(255,255,255,0.1)"
+                            />
                         </div>
                     {/if}
-                </div>
+                </header>
 
                 <div class="modal-body">
-                    <div class="modal-name">{selectedItem.name}</div>
                     {#if selectedItem.description}
                         <div class="modal-desc">{selectedItem.description}</div>
                     {/if}
@@ -293,25 +390,50 @@
                                     <div class="option-group-title">
                                         <span>{option.name}</span>
                                         {#if option.required}
-                                            <span class="option-required">Required</span>
+                                            <span class="option-required"
+                                                >Required</span
+                                            >
                                         {/if}
                                     </div>
                                     {#each option.choices as choice}
                                         <div
-                                            class={cn('option-choice', isChoiceSelected(option.name, choice.name) && 'option-choice-selected')}
+                                            class={cn(
+                                                "option-choice",
+                                                isChoiceSelected(
+                                                    option.name,
+                                                    choice.name,
+                                                ) && "option-choice-selected",
+                                            )}
                                             role="button"
                                             tabindex="0"
-                                            onclick={() => handleOptionChange(option, choice.name)}
-                                            onkeydown={(e) => e.key === 'Enter' && handleOptionChange(option, choice.name)}
+                                            onclick={() =>
+                                                handleOptionChange(
+                                                    option,
+                                                    choice.name,
+                                                )}
+                                            onkeydown={(e) =>
+                                                e.key === "Enter" &&
+                                                handleOptionChange(
+                                                    option,
+                                                    choice.name,
+                                                )}
                                         >
                                             <span class="option-choice-name">
                                                 {#if isChoiceSelected(option.name, choice.name)}
-                                                    <Check size={14} color="var(--color-primary)" />
+                                                    <Check
+                                                        size={14}
+                                                        color="var(--color-primary)"
+                                                    />
                                                 {/if}
                                                 {choice.name}
                                             </span>
                                             {#if choice.price_addition > 0}
-                                                <span class="option-choice-price">+{formatPrice(choice.price_addition)}</span>
+                                                <span
+                                                    class="option-choice-price"
+                                                    >+{formatPrice(
+                                                        choice.price_addition,
+                                                    )}</span
+                                                >
                                             {/if}
                                         </div>
                                     {/each}
@@ -325,13 +447,22 @@
                     <!-- Quantity & Instructions -->
                     <div class="modal-section">
                         <div class="quantity-row">
-                            <span class="label" style="margin-bottom: 0;">Quantity</span>
+                            <span class="label" style="margin-bottom: 0;"
+                                >Quantity</span
+                            >
                             <div class="quantity-controls">
-                                <button class="quantity-btn" onclick={() => quantity = Math.max(1, quantity - 1)}>
+                                <button
+                                    class="quantity-btn"
+                                    onclick={() =>
+                                        (quantity = Math.max(1, quantity - 1))}
+                                >
                                     <Minus size={16} />
                                 </button>
                                 <span class="quantity-value">{quantity}</span>
-                                <button class="quantity-btn" onclick={() => quantity++}>
+                                <button
+                                    class="quantity-btn"
+                                    onclick={() => quantity++}
+                                >
                                     <Plus size={16} />
                                 </button>
                             </div>
@@ -349,12 +480,14 @@
                     </div>
                 </div>
 
-                <!-- Sticky Footer -->
-                <div class="modal-footer-sticky">
-                    <button class="btn btn-primary btn-lg add-to-cart-btn" onclick={handleAddToCart}>
+                <footer class="modal-footer">
+                    <button
+                        class="btn btn-primary btn-lg add-to-cart-btn"
+                        onclick={handleAddToCart}
+                    >
                         Add — {formatPrice(modalPrice * quantity)}
                     </button>
-                </div>
+                </footer>
             </div>
         </div>
     {/if}
@@ -408,11 +541,38 @@
         box-shadow: var(--shadow-sm);
     }
 
-    .grid-icon { width: 14px; height: 14px; border: 2px solid currentColor; display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; gap: 2px; }
-    .grid-icon::before, .grid-icon::after { content: ''; background: currentColor; }
-    
-    .list-icon { width: 14px; height: 14px; border-top: 2px solid currentColor; border-bottom: 2px solid currentColor; position: relative; }
-    .list-icon::before { content: ''; position: absolute; left: 0; right: 0; top: 50%; height: 2px; background: currentColor; transform: translateY(-50%); }
+    .grid-icon {
+        width: 14px;
+        height: 14px;
+        border: 2px solid currentColor;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        grid-template-rows: 1fr 1fr;
+        gap: 2px;
+    }
+    .grid-icon::before,
+    .grid-icon::after {
+        content: "";
+        background: currentColor;
+    }
+
+    .list-icon {
+        width: 14px;
+        height: 14px;
+        border-top: 2px solid currentColor;
+        border-bottom: 2px solid currentColor;
+        position: relative;
+    }
+    .list-icon::before {
+        content: "";
+        position: absolute;
+        left: 0;
+        right: 0;
+        top: 50%;
+        height: 2px;
+        background: currentColor;
+        transform: translateY(-50%);
+    }
 
     /* Search */
     .search-bar {
@@ -469,7 +629,9 @@
         scrollbar-width: none;
     }
 
-    .category-pills-inner::-webkit-scrollbar { display: none; }
+    .category-pills-inner::-webkit-scrollbar {
+        display: none;
+    }
 
     .pill {
         flex-shrink: 0;
@@ -530,11 +692,19 @@
 
     .deal-card {
         border-color: rgba(230, 57, 70, 0.3) !important;
-        background: linear-gradient(135deg, rgba(230, 57, 70, 0.05), rgba(0, 0, 0, 0.2)) !important;
+        background: linear-gradient(
+            135deg,
+            rgba(230, 57, 70, 0.05),
+            rgba(0, 0, 0, 0.2)
+        ) !important;
     }
 
     .deal-img-bg {
-        background: linear-gradient(135deg, var(--color-bg-secondary), var(--color-primary-dark));
+        background: linear-gradient(
+            135deg,
+            var(--color-bg-secondary),
+            var(--color-primary-dark)
+        );
         display: flex;
         align-items: center;
         justify-content: center;
@@ -671,7 +841,11 @@
     .menu-card-image-placeholder {
         width: 100%;
         aspect-ratio: 16/10;
-        background: linear-gradient(135deg, var(--color-bg-tertiary), var(--color-bg-secondary));
+        background: linear-gradient(
+            135deg,
+            var(--color-bg-tertiary),
+            var(--color-bg-secondary)
+        );
         display: flex;
         align-items: center;
         justify-content: center;
@@ -683,8 +857,8 @@
         aspect-ratio: 1/1;
     }
 
-    .menu-card-body { 
-        padding: var(--space-4); 
+    .menu-card-body {
+        padding: var(--space-4);
         flex: 1;
         display: flex;
         flex-direction: column;
@@ -744,7 +918,11 @@
         width: 40px;
         height: 40px;
         border-radius: var(--radius-full);
-        background: linear-gradient(135deg, var(--color-primary), var(--color-primary-dark));
+        background: linear-gradient(
+            135deg,
+            var(--color-primary),
+            var(--color-primary-dark)
+        );
         color: white;
         display: flex;
         align-items: center;
@@ -781,7 +959,7 @@
         }
     }
 
-    .modal-sheet {
+    .modal-content {
         background: var(--color-bg-secondary);
         width: 100%;
         height: 100%;
@@ -794,8 +972,8 @@
     }
 
     @media (min-width: 768px) {
-        .modal-sheet {
-            max-width: 500px;
+        .modal-content {
+            max-width: 480px;
             height: auto;
             max-height: 90vh;
             border-radius: var(--radius-2xl);
@@ -804,8 +982,8 @@
         }
     }
 
-    /* Sticky Header */
-    .modal-header-sticky {
+    /* Header */
+    .modal-header {
         position: relative;
         flex-shrink: 0;
         background: var(--color-bg-secondary);
@@ -813,6 +991,18 @@
         border-top-left-radius: inherit;
         border-top-right-radius: inherit;
         overflow: hidden;
+    }
+
+    .modal-header h2 {
+        position: absolute;
+        bottom: var(--space-4);
+        left: var(--space-5);
+        color: white;
+        font-family: var(--font-display);
+        font-size: var(--text-2xl);
+        font-weight: 800;
+        z-index: 3;
+        text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
     }
 
     .sheet-handle {
@@ -828,7 +1018,7 @@
         z-index: 3;
     }
 
-    .modal-close {
+    .close-btn {
         position: absolute;
         top: var(--space-4);
         right: var(--space-4);
@@ -842,6 +1032,14 @@
         align-items: center;
         justify-content: center;
         z-index: 3;
+        transition: all var(--transition-fast);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .close-btn:hover {
+        background: var(--color-primary);
+        transform: rotate(90deg);
+        border-color: transparent;
     }
 
     .modal-image {
@@ -853,16 +1051,25 @@
     .modal-image-placeholder {
         width: 100%;
         aspect-ratio: 16/9;
-        background: linear-gradient(135deg, var(--color-bg-tertiary), var(--color-bg-primary));
+        background: linear-gradient(
+            135deg,
+            var(--color-bg-tertiary),
+            var(--color-bg-primary)
+        );
         display: flex;
         align-items: center;
         justify-content: center;
     }
 
-    .modal-body { 
-        padding: var(--space-5); 
+    .modal-body {
+        padding: var(--space-5);
         overflow-y: auto;
         flex: 1;
+        scrollbar-width: none;
+    }
+
+    .modal-body::-webkit-scrollbar {
+        display: none;
     }
 
     .modal-section {
@@ -876,12 +1083,6 @@
         opacity: 0.5;
     }
 
-    .modal-name {
-        font-size: var(--text-xl);
-        font-weight: var(--weight-bold);
-        margin-bottom: var(--space-1);
-    }
-
     .modal-desc {
         font-size: var(--text-sm);
         color: var(--color-text-secondary);
@@ -892,20 +1093,23 @@
     .modal-price {
         font-size: var(--text-lg);
         font-weight: var(--weight-bold);
-        color: var(--color-primary);
+        color: var(--color-gold);
         margin-bottom: var(--space-2);
     }
 
-    /* Sticky Footer */
-    .modal-footer-sticky {
-        padding: var(--space-4) var(--space-5) calc(var(--space-4) + env(safe-area-inset-bottom, 0));
+    /* Footer */
+    .modal-footer {
+        padding: var(--space-4) var(--space-5)
+            calc(var(--space-4) + env(safe-area-inset-bottom, 0));
         background: var(--color-bg-secondary);
         border-top: 1px solid var(--color-border);
         flex-shrink: 0;
         z-index: 2;
     }
 
-    .option-group { margin-bottom: var(--space-5); }
+    .option-group {
+        margin-bottom: var(--space-5);
+    }
 
     .option-group-title {
         font-size: var(--text-sm);
@@ -995,7 +1199,9 @@
         text-align: center;
     }
 
-    .notes-field { margin-bottom: var(--space-2); }
+    .notes-field {
+        margin-bottom: var(--space-2);
+    }
 
     .add-to-cart-btn {
         width: 100%;

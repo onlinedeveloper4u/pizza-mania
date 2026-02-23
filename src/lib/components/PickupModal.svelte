@@ -1,14 +1,20 @@
 <script lang="ts">
-    import { X, MapPin, Calendar, Clock } from 'lucide-svelte';
-    import { cn } from '$lib/utils';
-    import { fade, scale, slide } from 'svelte/transition';
-    import { settings } from '$lib/stores/settings';
+    import { X, MapPin, Calendar, Clock } from "lucide-svelte";
+    import { cn } from "$lib/utils";
+    import { fade, scale, slide } from "svelte/transition";
+    import { settings } from "$lib/stores/settings";
 
     let { show = $bindable(false), onConfirm } = $props();
 
-    let pickupTime: 'now' | 'later' = $state('now');
-    let selectedDate = $state(new Date().toISOString().split('T')[0]);
-    let selectedTime = $state(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false }));
+    let pickupTime: "now" | "later" = $state("now");
+    let selectedDate = $state(new Date().toISOString().split("T")[0]);
+    let selectedTime = $state(
+        new Date().toLocaleTimeString([], {
+            hour: "2-digit",
+            minute: "2-digit",
+            hour12: false,
+        }),
+    );
 
     let dateInput: HTMLInputElement | undefined = $state();
     let timeInput: HTMLInputElement | undefined = $state();
@@ -16,8 +22,10 @@
     // Body Scroll Lock
     $effect(() => {
         if (show) {
-            const originalStyle = window.getComputedStyle(document.body).overflow;
-            document.body.style.overflow = 'hidden';
+            const originalStyle = window.getComputedStyle(
+                document.body,
+            ).overflow;
+            document.body.style.overflow = "hidden";
             return () => {
                 document.body.style.overflow = originalStyle;
             };
@@ -26,21 +34,43 @@
 
     function handleStartOrder() {
         onConfirm({
-            address: 'Pickup at ' + ($settings?.restaurant_name || 'Pizza Mania'),
-            orderMethod: 'pickup',
+            address:
+                "Pickup at " + ($settings?.restaurant_name || "Pizza Mania"),
+            orderMethod: "pickup",
             type: pickupTime,
-            scheduledAt: pickupTime === 'later' ? `${selectedDate} ${selectedTime}` : null
+            scheduledAt:
+                pickupTime === "later"
+                    ? `${selectedDate} ${selectedTime}`
+                    : null,
         });
         show = false;
     }
 </script>
 
 {#if show}
-    <div class="modal-overlay" transition:fade={{ duration: 200 }} role="button" tabindex="-1" onclick={() => show = false} onkeydown={(e) => e.key === 'Escape' && (show = false)}>
-        <div class="modal-content glass" transition:scale={{ duration: 300, start: 0.95 }} role="dialog" tabindex="-1" onclick={(e) => e.stopPropagation()} onkeydown={(e) => e.key === 'Escape' && (show = false)}>
+    <div
+        class="modal-overlay"
+        transition:fade={{ duration: 200 }}
+        role="button"
+        tabindex="-1"
+        onclick={() => (show = false)}
+        onkeydown={(e) => e.key === "Escape" && (show = false)}
+    >
+        <div
+            class="modal-content glass"
+            transition:scale={{ duration: 300, start: 0.95 }}
+            role="dialog"
+            tabindex="-1"
+            onclick={(e) => e.stopPropagation()}
+            onkeydown={(e) => e.key === "Escape" && (show = false)}
+        >
             <header class="modal-header">
                 <h2>Confirm Pickup Info</h2>
-                <button class="close-btn" onclick={() => show = false} aria-label="Close">
+                <button
+                    class="close-btn"
+                    onclick={() => (show = false)}
+                    aria-label="Close"
+                >
                     <X size={24} strokeWidth={2} />
                 </button>
             </header>
@@ -49,26 +79,51 @@
                 <div class="pickup-info-box">
                     <MapPin size={24} class="pickup-icon" />
                     <div class="pickup-details">
-                        <span class="pickup-store-name">{$settings?.restaurant_name || 'Pizza Mania'}</span>
-                        <span class="pickup-store-address">{$settings?.address || 'Main Street, City Center'}</span>
+                        <span class="pickup-store-name"
+                            >{$settings?.restaurant_name || "Pizza Mania"}</span
+                        >
+                        <span class="pickup-store-address"
+                            >{$settings?.address ||
+                                "Main Street, City Center"}</span
+                        >
                     </div>
                 </div>
 
                 <!-- Schedule Section -->
                 <div class="form-section time-section">
                     <h3 class="section-title">Schedule Order</h3>
-                    
+
                     <div class="time-radio-group">
-                        <label class={cn("time-card", pickupTime === 'now' && "active")}>
-                            <input type="radio" name="order-time" value="now" bind:group={pickupTime} />
+                        <label
+                            class={cn(
+                                "time-card",
+                                pickupTime === "now" && "active",
+                            )}
+                        >
+                            <input
+                                type="radio"
+                                name="order-time"
+                                value="now"
+                                bind:group={pickupTime}
+                            />
                             <div class="custom-radio"></div>
                             <div class="time-card-content">
                                 <span class="time-primary">Pickup Now</span>
                             </div>
                         </label>
 
-                        <label class={cn("time-card", pickupTime === 'later' && "active")}>
-                            <input type="radio" name="order-time" value="later" bind:group={pickupTime} />
+                        <label
+                            class={cn(
+                                "time-card",
+                                pickupTime === "later" && "active",
+                            )}
+                        >
+                            <input
+                                type="radio"
+                                name="order-time"
+                                value="later"
+                                bind:group={pickupTime}
+                            />
                             <div class="custom-radio"></div>
                             <div class="time-card-content">
                                 <span class="time-primary">Pickup Later</span>
@@ -76,26 +131,31 @@
                         </label>
                     </div>
 
-                    {#if pickupTime === 'later'}
+                    {#if pickupTime === "later"}
                         <div class="scheduled-picker" transition:slide>
                             <label class="picker-half">
                                 <Calendar size={18} class="picker-icon" />
-                                <span class="picker-val">{new Date(selectedDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })}</span>
-                                <input 
+                                <span class="picker-val"
+                                    >{new Date(selectedDate).toLocaleDateString(
+                                        "en-GB",
+                                        { day: "2-digit", month: "short" },
+                                    )}</span
+                                >
+                                <input
                                     bind:this={dateInput}
-                                    type="date" 
-                                    bind:value={selectedDate} 
-                                    min={new Date().toISOString().split('T')[0]} 
+                                    type="date"
+                                    bind:value={selectedDate}
+                                    min={new Date().toISOString().split("T")[0]}
                                 />
                             </label>
                             <div class="picker-divider"></div>
                             <label class="picker-half">
                                 <Clock size={18} class="picker-icon" />
                                 <span class="picker-val">{selectedTime}</span>
-                                <input 
+                                <input
                                     bind:this={timeInput}
-                                    type="time" 
-                                    bind:value={selectedTime} 
+                                    type="time"
+                                    bind:value={selectedTime}
                                 />
                             </label>
                         </div>
@@ -271,9 +331,13 @@
         position: relative;
     }
 
-    .time-card input { display: none; }
+    .time-card input {
+        display: none;
+    }
 
-    .time-card:hover { border-color: var(--color-border-hover); }
+    .time-card:hover {
+        border-color: var(--color-border-hover);
+    }
 
     .time-card.active {
         border-color: var(--color-primary);
@@ -293,10 +357,12 @@
         flex-shrink: 0;
     }
 
-    .active .custom-radio { border-color: var(--color-primary); }
+    .active .custom-radio {
+        border-color: var(--color-primary);
+    }
 
     .active .custom-radio::after {
-        content: '';
+        content: "";
         width: 12px;
         height: 12px;
         background: var(--color-primary);
@@ -376,7 +442,11 @@
 
     .confirm-order-btn {
         width: 100%;
-        background: linear-gradient(135deg, var(--color-primary), var(--color-primary-dark));
+        background: linear-gradient(
+            135deg,
+            var(--color-primary),
+            var(--color-primary-dark)
+        );
         color: white;
         border: none;
         padding: 16px;

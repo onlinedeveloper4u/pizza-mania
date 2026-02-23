@@ -4,7 +4,6 @@
     import { cn } from '$lib/utils';
     import { cart } from '$lib/stores/cart';
     import { goto } from '$app/navigation';
-    import DealModal from '$lib/components/DealModal.svelte';
     import { createClient } from '$lib/supabase/client';
     import { settings } from '$lib/stores/settings';
     import { APP_NAME } from '$lib/constants';
@@ -16,10 +15,6 @@
     
     let email = $state('');
     let submitting = $state(false);
-    
-    // Modal State
-    let showDealModal = $state(false);
-    let selectedDeal: any = $state(null);
 
     // Data State
     let offers: any[] = $state([]);
@@ -60,8 +55,7 @@
 
     function handleOrderNow(offer: any) {
         cart.setOrderType(activeTab === 'takeaway' ? 'pickup' : 'delivery');
-        selectedDeal = offer;
-        showDealModal = true;
+        goto(`/offers/${offer.id}?type=${activeTab}`);
     }
 
     async function handleSubscribe() {
@@ -233,13 +227,6 @@
     </footer>
 
     <!-- Deal Builder Modal -->
-    {#if showDealModal && selectedDeal}
-        <DealModal 
-            deal={selectedDeal} 
-            onclose={() => showDealModal = false} 
-            orderType={activeTab === 'takeaway' ? 'pickup' : 'delivery'}
-        />
-    {/if}
 </div>
 
 <style>
