@@ -80,6 +80,19 @@
 
     let craftMedia = $state<LandingMedia[]>([]);
     let ambianceMedia = $state<LandingMedia[]>([]);
+    let galleryModal = $state<"craft" | "ambiance" | null>(null);
+
+    const CRAFT_PREVIEW_LIMIT = 4;
+    const AMBIANCE_PREVIEW_LIMIT = 5;
+
+    function shuffle<T>(arr: T[]): T[] {
+        const a = [...arr];
+        for (let i = a.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [a[i], a[j]] = [a[j], a[i]];
+        }
+        return a;
+    }
 
     const eventTypes = [
         {
@@ -118,11 +131,11 @@
                 .order("created_at", { ascending: true });
 
             if (data) {
-                craftMedia = data.filter(
-                    (m: LandingMedia) => m.category === "craft",
+                craftMedia = shuffle(
+                    data.filter((m: LandingMedia) => m.category === "craft"),
                 );
-                ambianceMedia = data.filter(
-                    (m: LandingMedia) => m.category === "ambiance",
+                ambianceMedia = shuffle(
+                    data.filter((m: LandingMedia) => m.category === "ambiance"),
                 );
             }
         } catch (err) {
@@ -130,6 +143,15 @@
         }
 
         return () => clearInterval(testimonialInterval);
+    });
+
+    // Lock body scroll when gallery modal is open
+    $effect(() => {
+        if (galleryModal) {
+            document.body.style.overflow = "hidden";
+        } else {
+            document.body.style.overflow = "";
+        }
     });
 
     function nextTestimonial() {
@@ -464,7 +486,7 @@
                 </p>
             </div>
 
-            <div class="prep-showcase">
+            <div class="prep-showcase" class:has-one={craftMedia.length === 1}>
                 <!-- Large Hero Image -->
                 {#if craftMedia.length > 0}
                     <div class="prep-hero">
@@ -496,11 +518,37 @@
                     </div>
                 {/if}
 
-                <!-- Side Grid -->
+                <!-- Side Grid (limited) -->
                 {#if craftMedia.length > 1}
                     <div class="prep-details">
-                        {#each craftMedia.slice(1) as item}
-                            <div class="prep-card">
+                        {#each craftMedia.slice(1, CRAFT_PREVIEW_LIMIT) as item, idx}
+                            {@const isLast =
+                                idx ===
+                                Math.min(
+                                    craftMedia.length - 2,
+                                    CRAFT_PREVIEW_LIMIT - 2,
+                                )}
+                            {@const remaining =
+                                craftMedia.length - CRAFT_PREVIEW_LIMIT}
+                            <div
+                                class="prep-card"
+                                class:clickable={isLast && remaining > 0}
+                                role={isLast && remaining > 0
+                                    ? "button"
+                                    : undefined}
+                                tabindex={isLast && remaining > 0
+                                    ? 0
+                                    : undefined}
+                                onclick={() =>
+                                    isLast &&
+                                    remaining > 0 &&
+                                    (galleryModal = "craft")}
+                                onkeydown={(e) =>
+                                    isLast &&
+                                    remaining > 0 &&
+                                    e.key === "Enter" &&
+                                    (galleryModal = "craft")}
+                            >
                                 {#if item.media_type === "video"}
                                     <video
                                         src={item.url}
@@ -519,12 +567,21 @@
                                         class="prep-card-img"
                                     />
                                 {/if}
-                                <div class="prep-card-overlay">
-                                    <h4>{item.title}</h4>
-                                    {#if item.caption}
-                                        <p>{item.caption}</p>
-                                    {/if}
-                                </div>
+                                {#if isLast && remaining > 0}
+                                    <div class="more-overlay">
+                                        <span class="more-count"
+                                            >+{remaining}</span
+                                        >
+                                        <span class="more-label">View All</span>
+                                    </div>
+                                {:else}
+                                    <div class="prep-card-overlay">
+                                        <h4>{item.title}</h4>
+                                        {#if item.caption}
+                                            <p>{item.caption}</p>
+                                        {/if}
+                                    </div>
+                                {/if}
                             </div>
                         {/each}
                     </div>
@@ -570,10 +627,34 @@
             </div>
 
             <div class="gallery-grid">
-                {#each ambianceMedia as item, i}
+                {#each ambianceMedia.slice(0, AMBIANCE_PREVIEW_LIMIT) as item, i}
+                    {@const isLast =
+                        i ===
+                        Math.min(
+                            ambianceMedia.length - 1,
+                            AMBIANCE_PREVIEW_LIMIT - 1,
+                        )}
+                    {@const remaining =
+                        ambianceMedia.length - AMBIANCE_PREVIEW_LIMIT}
                     <div
                         class="gallery-item"
                         class:gallery-item-large={i === 0}
+                        class:span-col-2={ambianceMedia.length === 4 && i === 3}
+                        class:span-row-2={ambianceMedia.length === 2 && i === 1}
+                        class:span-col-2-row-2={ambianceMedia.length === 3 &&
+                            i >= 1}
+                        class:clickable={isLast && remaining > 0}
+                        role={isLast && remaining > 0 ? "button" : undefined}
+                        tabindex={isLast && remaining > 0 ? 0 : undefined}
+                        onclick={() =>
+                            isLast &&
+                            remaining > 0 &&
+                            (galleryModal = "ambiance")}
+                        onkeydown={(e) =>
+                            isLast &&
+                            remaining > 0 &&
+                            e.key === "Enter" &&
+                            (galleryModal = "ambiance")}
                     >
                         {#if item.media_type === "video"}
                             <video
@@ -594,9 +675,16 @@
                                 loading="lazy"
                             />
                         {/if}
-                        <div class="gallery-overlay">
-                            <span class="gallery-label">{item.title}</span>
-                        </div>
+                        {#if isLast && remaining > 0}
+                            <div class="more-overlay">
+                                <span class="more-count">+{remaining}</span>
+                                <span class="more-label">View All</span>
+                            </div>
+                        {:else}
+                            <div class="gallery-overlay">
+                                <span class="gallery-label">{item.title}</span>
+                            </div>
+                        {/if}
                     </div>
                 {/each}
             </div>
@@ -720,6 +808,60 @@
         </div>
     </section>
 </div>
+
+<!-- Gallery Modal -->
+{#if galleryModal}
+    {@const items = galleryModal === "craft" ? craftMedia : ambianceMedia}
+    <div
+        class="gallery-modal-overlay"
+        role="dialog"
+        aria-modal="true"
+        tabindex="-1"
+        onkeydown={(e) => e.key === "Escape" && (galleryModal = null)}
+    >
+        <div class="gallery-modal">
+            <div class="gallery-modal-header">
+                <h2>
+                    {galleryModal === "craft"
+                        ? "🍕 Our Craft"
+                        : "🏠 Our Pizzeria"}
+                </h2>
+                <button
+                    class="gallery-modal-close"
+                    onclick={() => (galleryModal = null)}>✕</button
+                >
+            </div>
+            <div class="gallery-modal-grid">
+                {#each items as item}
+                    <div class="gallery-modal-item">
+                        {#if item.media_type === "video"}
+                            <video
+                                src={item.url}
+                                class="gallery-modal-media"
+                                controls
+                                playsinline
+                            >
+                                <track kind="captions" />
+                            </video>
+                        {:else}
+                            <img
+                                src={item.url}
+                                alt={item.caption || item.title}
+                                class="gallery-modal-media"
+                            />
+                        {/if}
+                        {#if item.title || item.caption}
+                            <div class="gallery-modal-info">
+                                {#if item.title}<h4>{item.title}</h4>{/if}
+                                {#if item.caption}<p>{item.caption}</p>{/if}
+                            </div>
+                        {/if}
+                    </div>
+                {/each}
+            </div>
+        </div>
+    </div>
+{/if}
 
 <LocationModal
     bind:show={showLocationModal}
@@ -1461,6 +1603,10 @@
         margin-bottom: var(--space-12);
     }
 
+    .prep-showcase.has-one {
+        grid-template-columns: 1fr;
+    }
+
     .prep-hero {
         position: relative;
         border-radius: var(--radius-2xl);
@@ -1604,6 +1750,20 @@
         height: 100%;
     }
 
+    .span-col-2 {
+        grid-column: span 2;
+    }
+
+    .span-row-2 {
+        grid-row: span 2;
+        height: 100%;
+    }
+
+    .span-col-2-row-2 {
+        grid-column: span 2;
+        height: 280px; /* Force height so it doesn't stretch badly, or keep 100% depending on flex*/
+    }
+
     .gallery-img {
         width: 100%;
         height: 100%;
@@ -1634,6 +1794,152 @@
         font-size: var(--text-sm);
         font-weight: var(--weight-semibold);
         color: white;
+    }
+
+    /* +N More Overlay */
+    .clickable {
+        cursor: pointer;
+    }
+
+    .more-overlay {
+        position: absolute;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.7);
+        backdrop-filter: blur(3px);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: var(--space-1);
+        z-index: 2;
+        transition: background var(--transition-fast);
+    }
+
+    .clickable:hover .more-overlay {
+        background: rgba(0, 0, 0, 0.55);
+    }
+
+    .more-count {
+        font-size: 2.5rem;
+        font-weight: var(--weight-bold);
+        color: white;
+        line-height: 1;
+    }
+
+    .more-label {
+        font-size: var(--text-sm);
+        font-weight: var(--weight-medium);
+        color: rgba(255, 255, 255, 0.7);
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+    }
+
+    /* Gallery Modal */
+    .gallery-modal-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.85);
+        backdrop-filter: blur(8px);
+        z-index: 200;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: var(--space-6);
+    }
+
+    .gallery-modal {
+        width: min(90vw, 1200px);
+        height: 85vh;
+        background: var(--color-bg-primary);
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius-2xl);
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+    }
+
+    .gallery-modal-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: var(--space-5) var(--space-6);
+        border-bottom: 1px solid var(--color-border);
+        flex-shrink: 0;
+    }
+
+    .gallery-modal-header h2 {
+        font-family: var(--font-display);
+        font-size: var(--text-xl);
+        font-weight: var(--weight-bold);
+    }
+
+    .gallery-modal-close {
+        width: 36px;
+        height: 36px;
+        border-radius: var(--radius-full);
+        background: var(--color-bg-glass);
+        border: 1px solid var(--color-border);
+        color: var(--color-text-secondary);
+        font-size: var(--text-base);
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all var(--transition-fast);
+    }
+
+    .gallery-modal-close:hover {
+        background: var(--color-bg-glass-hover);
+        color: var(--color-text-primary);
+    }
+
+    .gallery-modal-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr));
+        gap: var(--space-5);
+        padding: var(--space-6);
+        overflow-y: auto;
+        flex: 1;
+        align-content: start; /* PREVENTS VERTICAL STRETCHING */
+    }
+
+    .gallery-modal-item {
+        border-radius: var(--radius-xl);
+        overflow: hidden;
+        background: var(--color-bg-tertiary);
+        border: 1px solid var(--color-border);
+        transition: all var(--transition-fast);
+        display: flex;
+        flex-direction: column;
+    }
+
+    .gallery-modal-item:hover {
+        border-color: var(--color-border-hover);
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-lg);
+    }
+
+    .gallery-modal-media {
+        width: 100%;
+        aspect-ratio: 4 / 3;
+        flex-shrink: 0;
+        object-fit: cover;
+        display: block;
+    }
+
+    .gallery-modal-info {
+        padding: var(--space-3) var(--space-4);
+    }
+
+    .gallery-modal-info h4 {
+        font-size: var(--text-sm);
+        font-weight: var(--weight-semibold);
+        margin-bottom: 2px;
+    }
+
+    .gallery-modal-info p {
+        font-size: var(--text-xs);
+        color: var(--color-text-muted);
     }
 
     /* Virtual Tour */
