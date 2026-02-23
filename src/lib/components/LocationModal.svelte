@@ -63,7 +63,8 @@
 
     async function loadGoogleMaps() {
         if (window.google?.maps?.importLibrary) {
-            initServices();
+            await initServices();
+            initMap();
             return;
         }
 
@@ -112,7 +113,8 @@
             v: "weekly",
         });
 
-        initServices();
+        await initServices();
+        initMap();
     }
 
     async function initServices() {
@@ -123,47 +125,57 @@
             const { Geocoder } = await google.maps.importLibrary("geocoding");
             geocoder = new Geocoder();
 
-            // @ts-ignore
             const { Map } = await google.maps.importLibrary("maps");
-            if (mapElement) {
-                map = new Map(mapElement, {
-                    center: { lat: 50.41, lng: 4.44 }, // Charleroi generic
-                    zoom: 13,
-                    mapId: "DEMO_MAP_ID",
-                    disableDefaultUI: true,
-                    gestureHandling: "greedy",
-                });
-
-                map.addListener("dragend", () => {
-                    if (!geocoder) return;
-                    const center = map.getCenter();
-                    geocoder.geocode(
-                        { location: center },
-                        (results: any, status: any) => {
-                            if (status === "OK" && results[0]) {
-                                address = results[0].formatted_address;
-                                searchInput = results[0].formatted_address;
-                                mapMoved = true;
-                            }
-                        },
-                    );
-                });
-
-                map.addListener("dragstart", () => {
-                    mapMoved = true;
-                    showResults = false;
-                });
-            }
-
             googleMapsLoaded = true;
         } catch (err) {
             console.error("Failed to load Google Maps libraries:", err);
         }
     }
 
+    function initMap() {
+        // @ts-ignore
+        if (!googleMapsLoaded || !mapElement || !google.maps.Map) return;
+
+        // @ts-ignore
+        const { Map } = google.maps;
+        map = new Map(mapElement, {
+            center: { lat: 50.41, lng: 4.44 }, // Charleroi generic
+            zoom: 13,
+            mapId: "DEMO_MAP_ID",
+            disableDefaultUI: true,
+            gestureHandling: "greedy",
+        });
+
+        map.addListener("dragend", () => {
+            if (!geocoder) return;
+            const center = map.getCenter();
+            geocoder.geocode(
+                { location: center },
+                (results: any, status: any) => {
+                    if (status === "OK" && results[0]) {
+                        address = results[0].formatted_address;
+                        searchInput = results[0].formatted_address;
+                        mapMoved = true;
+                    }
+                },
+            );
+        });
+
+        map.addListener("dragstart", () => {
+            mapMoved = true;
+            showResults = false;
+        });
+    }
+
     $effect(() => {
-        if (show && !googleMapsLoaded) {
-            loadGoogleMaps();
+        if (show) {
+            if (!googleMapsLoaded) {
+                loadGoogleMaps();
+            } else {
+                // Library already loaded, but mapElement might be new
+                // Wait for Svelte to mount the new mapElement
+                setTimeout(initMap, 0);
+            }
         }
     });
 

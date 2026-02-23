@@ -1,27 +1,39 @@
 <script lang="ts">
-    import { UtensilsCrossed, Minus, Plus, Trash2, ShoppingBag, ArrowRight } from 'lucide-svelte';
-    import { settings } from '$lib/stores/settings';
-    import { cart } from '$lib/stores/cart';
-    import { formatPrice } from '$lib/utils';
-    import { DELIVERY_FEE } from '$lib/constants';
+    import {
+        UtensilsCrossed,
+        Minus,
+        Plus,
+        Trash2,
+        ShoppingBag,
+        ArrowRight,
+    } from "lucide-svelte";
+    import { settings } from "$lib/stores/settings";
+    import { cart } from "$lib/stores/cart";
+    import { formatPrice } from "$lib/utils";
+    import { DELIVERY_FEE } from "$lib/constants";
 
-    let items: typeof $state.snapshot extends never ? never : any[] = $state([]);
+    let items: typeof $state.snapshot extends never ? never : any[] = $state(
+        [],
+    );
     let currentItemCount = $state(0);
     let currentSubtotal = $state(0);
     let currentIsDineIn = $state(false);
     let orderType: string | null = $state(null);
 
-    cart.subscribe(s => { items = s.items; orderType = s.orderType; });
-    cart.itemCount.subscribe(v => currentItemCount = v);
-    cart.subtotal.subscribe(v => currentSubtotal = v);
-    cart.isDineIn.subscribe(v => currentIsDineIn = v);
+    cart.subscribe((s) => {
+        items = s.items;
+        orderType = s.orderType;
+    });
+    cart.itemCount.subscribe((v) => (currentItemCount = v));
+    cart.subtotal.subscribe((v) => (currentSubtotal = v));
+    cart.isDineIn.subscribe((v) => (currentIsDineIn = v));
 
-    let deliveryFee = $derived(orderType === 'delivery' ? DELIVERY_FEE : 0);
+    let deliveryFee = $derived(orderType === "delivery" ? DELIVERY_FEE : 0);
     let total = $derived(currentSubtotal + deliveryFee);
 </script>
 
 <svelte:head>
-    <title>Cart — {$settings?.restaurant_name || 'Pizza Mania'}</title>
+    <title>Cart — {$settings?.restaurant_name || "Pizza Mania"}</title>
 </svelte:head>
 
 <div class="cart-page">
@@ -35,7 +47,10 @@
     {:else}
         <div class="cart-header">
             <h1>Your Cart</h1>
-            <p>{currentItemCount} item{currentItemCount > 1 ? 's' : ''} in your cart</p>
+            <p>
+                {currentItemCount} item{currentItemCount > 1 ? "s" : ""} in your
+                cart
+            </p>
         </div>
 
         <div class="cart-layout">
@@ -44,35 +59,74 @@
                 {#each items as item (item.id)}
                     <div class="cart-item">
                         {#if item.menuItem.image_url}
-                            <img src={item.menuItem.image_url} alt={item.menuItem.name} class="cart-item-image" />
+                            <img
+                                src={item.menuItem.image_url}
+                                alt={item.menuItem.name}
+                                class="cart-item-image"
+                            />
                         {:else}
                             <div class="cart-item-image-placeholder">
-                                <UtensilsCrossed size={24} color="rgba(255,255,255,0.1)" />
+                                <UtensilsCrossed
+                                    size={24}
+                                    color="rgba(255,255,255,0.1)"
+                                />
                             </div>
                         {/if}
                         <div class="cart-item-info">
-                            <div class="cart-item-name">{item.menuItem.name}</div>
+                            <div class="cart-item-name">
+                                {item.menuItem.name}
+                            </div>
                             {#if Object.keys(item.selectedOptions).length > 0}
                                 <div class="cart-item-options">
                                     {#each Object.entries(item.selectedOptions) as [key, val]}
-                                        <span>{key}: {Array.isArray(val) ? val.join(', ') : val} · </span>
+                                        <span
+                                            >{key}: {Array.isArray(val)
+                                                ? val.join(", ")
+                                                : val} ·
+                                        </span>
                                     {/each}
                                 </div>
                             {/if}
                             {#if item.notes}
-                                <div class="cart-item-notes">Note: {item.notes}</div>
+                                <div class="cart-item-notes">
+                                    Note: {item.notes}
+                                </div>
                             {/if}
                             <div class="cart-item-actions">
-                                <span class="cart-item-price">{formatPrice(item.unitPrice * item.quantity)}</span>
+                                <span class="cart-item-price"
+                                    >{formatPrice(
+                                        item.unitPrice * item.quantity,
+                                    )}</span
+                                >
                                 <div class="cart-item-qty">
-                                    <button class="qty-btn" onclick={() => cart.updateQuantity(item.id, item.quantity - 1)}>
+                                    <button
+                                        class="qty-btn"
+                                        onclick={() =>
+                                            cart.updateQuantity(
+                                                item.id,
+                                                item.quantity - 1,
+                                            )}
+                                    >
                                         <Minus size={14} />
                                     </button>
-                                    <span class="qty-value">{item.quantity}</span>
-                                    <button class="qty-btn" onclick={() => cart.updateQuantity(item.id, item.quantity + 1)}>
+                                    <span class="qty-value"
+                                        >{item.quantity}</span
+                                    >
+                                    <button
+                                        class="qty-btn"
+                                        onclick={() =>
+                                            cart.updateQuantity(
+                                                item.id,
+                                                item.quantity + 1,
+                                            )}
+                                    >
                                         <Plus size={14} />
                                     </button>
-                                    <button class="remove-btn" onclick={() => cart.removeItem(item.id)} aria-label="Remove item">
+                                    <button
+                                        class="remove-btn"
+                                        onclick={() => cart.removeItem(item.id)}
+                                        aria-label="Remove item"
+                                    >
                                         <Trash2 size={16} />
                                     </button>
                                 </div>
@@ -89,7 +143,7 @@
                     <span>Subtotal</span>
                     <span>{formatPrice(currentSubtotal)}</span>
                 </div>
-                {#if orderType === 'delivery'}
+                {#if orderType === "delivery"}
                     <div class="summary-row">
                         <span>Delivery Fee</span>
                         <span>{formatPrice(deliveryFee)}</span>
@@ -135,9 +189,13 @@
         font-weight: var(--weight-bold);
     }
 
-    .empty-cart p { color: var(--color-text-secondary); }
+    .empty-cart p {
+        color: var(--color-text-secondary);
+    }
 
-    .cart-header { margin-bottom: var(--space-8); }
+    .cart-header {
+        margin-bottom: var(--space-8);
+    }
 
     .cart-header h1 {
         font-family: var(--font-display);
@@ -146,7 +204,9 @@
         margin-bottom: var(--space-2);
     }
 
-    .cart-header p { color: var(--color-text-secondary); }
+    .cart-header p {
+        color: var(--color-text-secondary);
+    }
 
     .cart-layout {
         display: grid;
@@ -184,7 +244,9 @@
         flex-shrink: 0;
     }
 
-    .cart-item-info { flex: 1; }
+    .cart-item-info {
+        flex: 1;
+    }
 
     .cart-item-name {
         font-weight: var(--weight-semibold);
@@ -258,7 +320,9 @@
         margin-left: var(--space-2);
     }
 
-    .remove-btn:hover { color: var(--color-danger); }
+    .remove-btn:hover {
+        color: var(--color-danger);
+    }
 
     .order-summary {
         position: sticky;
@@ -317,7 +381,8 @@
             padding: var(--space-4);
         }
 
-        .cart-item-image, .cart-item-image-placeholder {
+        .cart-item-image,
+        .cart-item-image-placeholder {
             width: 80px;
             height: 64px;
         }

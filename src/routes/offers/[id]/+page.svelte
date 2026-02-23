@@ -1,26 +1,34 @@
 <script lang="ts">
-    import { onMount } from 'svelte';
-    import { page } from '$app/stores';
-    import { goto } from '$app/navigation';
-    import { Check, ChevronRight, ChevronLeft, ShoppingBag, X, Loader2, Info } from 'lucide-svelte';
-    import { fade, fly, scale } from 'svelte/transition';
-    import { cart } from '$lib/stores/cart';
-    import { formatPrice, cn } from '$lib/utils';
-    import { toast } from 'svelte-sonner';
-    import { createClient } from '$lib/supabase/client';
-    import { settings } from '$lib/stores/settings';
+    import { onMount } from "svelte";
+    import { page } from "$app/stores";
+    import { goto } from "$app/navigation";
+    import {
+        Check,
+        ChevronRight,
+        ChevronLeft,
+        ShoppingBag,
+        X,
+        Loader2,
+        Info,
+    } from "lucide-svelte";
+    import { fade, fly, scale } from "svelte/transition";
+    import { cart } from "$lib/stores/cart";
+    import { formatPrice, cn } from "$lib/utils";
+    import { toast } from "svelte-sonner";
+    import { createClient } from "$lib/supabase/client";
+    import { settings } from "$lib/stores/settings";
 
     const supabase = createClient();
-    
+
     let id = $derived($page.params.id);
-    let orderType = $derived($page.url.searchParams.get('type') || 'delivery');
+    let orderType = $derived($page.url.searchParams.get("type") || "delivery");
 
     // Data State
     let deal: any = $state(null);
     let loading = $state(true);
     let fetchError: string | null = $state(null);
     let menuItems: any[] = $state([]);
-    
+
     // Deal Builder State
     let step = $state(0);
     let selections: Record<string, any> = $state({});
@@ -29,30 +37,44 @@
     onMount(async () => {
         try {
             loading = true;
-            
+
             // 1. Fetch Deal
             const { data: dealData, error: dealErr } = await supabase
-                .from('deals')
-                .select('*')
-                .eq('id', id)
+                .from("deals")
+                .select("*")
+                .eq("id", id)
                 .single();
-            
-            if (dealErr || !dealData) throw new Error('Deal not found');
-            
+
+            if (dealErr || !dealData) throw new Error("Deal not found");
+
             deal = {
                 ...dealData,
-                contents: dealData.description ? dealData.description.split(',').map((s: string) => s.trim()) : []
+                contents: dealData.description
+                    ? dealData.description
+                          .split(",")
+                          .map((s: string) => s.trim())
+                    : [],
             };
 
             // 2. Fetch Menu & Categories
             const [catRes, itemRes] = await Promise.all([
-                supabase.from('categories').select('*').eq('is_active', true).order('sort_order'),
-                supabase.from('menu_items').select('*').eq('is_available', true).order('sort_order'),
+                supabase
+                    .from("categories")
+                    .select("*")
+                    .eq("is_active", true)
+                    .order("sort_order"),
+                supabase
+                    .from("menu_items")
+                    .select("*")
+                    .eq("is_available", true)
+                    .order("sort_order"),
             ]);
 
             if (catRes.data && itemRes.data) {
                 menuItems = itemRes.data.map((item: any) => {
-                    const category = catRes.data.find((c: any) => c.id === item.category_id);
+                    const category = catRes.data.find(
+                        (c: any) => c.id === item.category_id,
+                    );
                     return { ...item, category };
                 });
             }
@@ -61,9 +83,8 @@
             if (deal.steps && Array.isArray(deal.steps)) {
                 steps = deal.steps;
             }
-
         } catch (e: any) {
-            console.error('Error loading deal:', e);
+            console.error("Error loading deal:", e);
             fetchError = e.message;
         } finally {
             loading = false;
@@ -73,9 +94,12 @@
     function getItemsForStep(stepIndex: number) {
         if (!steps[stepIndex]) return [];
         const categoryName = steps[stepIndex].category;
-        return menuItems.filter(i => 
-            i.category?.name.toLowerCase().includes(categoryName.toLowerCase()) || 
-            i.category?.name === categoryName
+        return menuItems.filter(
+            (i) =>
+                i.category?.name
+                    .toLowerCase()
+                    .includes(categoryName.toLowerCase()) ||
+                i.category?.name === categoryName,
         );
     }
 
@@ -84,7 +108,7 @@
         // Auto-advance
         if (step < steps.length - 1) {
             setTimeout(() => {
-                if(step < steps.length - 1) step++;
+                if (step < steps.length - 1) step++;
             }, 300);
         }
     }
@@ -102,10 +126,11 @@
         if (!deal) return;
 
         const options: Record<string, string> = {
-            'Valid for': orderType === 'takeaway' ? 'Self Pickup' : 'Home Delivery'
+            "Valid for":
+                orderType === "takeaway" ? "Self Pickup" : "Home Delivery",
         };
-        
-        steps.forEach(s => {
+
+        steps.forEach((s) => {
             if (selections[s.id]) {
                 options[s.title] = selections[s.id].name;
             }
@@ -115,32 +140,38 @@
             id: `deal-${deal.id}-${Date.now()}`,
             deal_id: deal.id,
             name: deal.title,
-            description: deal.contents.join(', '),
+            description: deal.contents.join(", "),
             price: deal.price,
-            category_id: 'deals',
+            category_id: "deals",
             image_url: deal.image_url,
             is_available: true,
             options: [],
-            created_at: new Date().toISOString()
+            created_at: new Date().toISOString(),
         };
 
         // If menuItem ID is needed (based on previous fix)
         // We'll trust the checkout page to handle isDeal: true
-        
-        cart.addItem(cartItem, 1, options, 'Special Deal Bundle');
+
+        cart.addItem(cartItem, 1, options, "Special Deal Bundle");
         toast.success(`${deal.title} added to cart!`);
-        goto('/cart');
+        goto("/cart");
     }
 
     // Reactivity
-    let currentProgress = $derived(steps.length > 0 ? ((step + 1) / steps.length) * 100 : 0);
+    let currentProgress = $derived(
+        steps.length > 0 ? ((step + 1) / steps.length) * 100 : 0,
+    );
     let isStepComplete = $derived(steps[step] && !!selections[steps[step].id]);
-    let isAllComplete = $derived(steps.length > 0 && steps.every(s => selections[s.id]));
-
+    let isAllComplete = $derived(
+        steps.length > 0 && steps.every((s) => selections[s.id]),
+    );
 </script>
 
 <svelte:head>
-    <title>{deal ? deal.title : 'Loading Deal'} — {$settings?.restaurant_name || 'Pizza Mania'}</title>
+    <title
+        >{deal ? deal.title : "Loading Deal"} — {$settings?.restaurant_name ||
+            "Pizza Mania"}</title
+    >
 </svelte:head>
 
 <div class="deal-builder-page">
@@ -153,7 +184,7 @@
         <div class="state-container">
             <Info size={48} class="text-danger" />
             <h2>Oops!</h2>
-            <p>{fetchError || 'We could not find this special offer.'}</p>
+            <p>{fetchError || "We could not find this special offer."}</p>
             <a href="/offers" class="btn btn-primary mt-4">Back to Offers</a>
         </div>
     {:else}
@@ -163,11 +194,15 @@
                 <div class="deal-info glass">
                     <div class="deal-header">
                         <h1>{deal.title}</h1>
-                        <div class="deal-badge">{orderType === 'takeaway' ? 'Takeaway Only' : 'Delivery Deal'}</div>
+                        <div class="deal-badge">
+                            {orderType === "takeaway"
+                                ? "Takeaway Only"
+                                : "Delivery Deal"}
+                        </div>
                     </div>
-                    
+
                     <p class="deal-desc">{deal.description}</p>
-                    
+
                     <div class="price-tag">
                         <span class="currency">€</span>
                         <span class="amount">{deal.price.toFixed(2)}</span>
@@ -179,7 +214,10 @@
                             <span>{Math.round(currentProgress)}%</span>
                         </div>
                         <div class="progress-track">
-                            <div class="progress-bar" style="width: {currentProgress}%"></div>
+                            <div
+                                class="progress-bar"
+                                style="width: {currentProgress}%"
+                            ></div>
                         </div>
                     </div>
 
@@ -187,12 +225,18 @@
                         <h4>Your Selection</h4>
                         <ul class="summary-list">
                             {#each steps as s, i}
-                                <li class:active={i === step} class:filled={selections[s.id]}>
+                                <li
+                                    class:active={i === step}
+                                    class:filled={selections[s.id]}
+                                >
                                     <div class="summary-dot"></div>
                                     <div class="summary-text">
-                                        <div class="summary-step-title">{s.title}</div>
+                                        <div class="summary-step-title">
+                                            {s.title}
+                                        </div>
                                         <div class="summary-step-value">
-                                            {selections[s.id]?.name || 'Pending...'}
+                                            {selections[s.id]?.name ||
+                                                "Pending..."}
                                         </div>
                                     </div>
                                     {#if selections[s.id]}
@@ -204,14 +248,16 @@
                     </div>
 
                     <div class="sidebar-actions desktop-only">
-                        <button 
-                            class="btn btn-accent btn-lg full-width" 
+                        <button
+                            class="btn btn-accent btn-lg full-width"
                             disabled={!isAllComplete}
                             onclick={addToCart}
                         >
                             Complete Order <ShoppingBag size={20} />
                         </button>
-                        <a href="/offers" class="cancel-link">Cancel and go back</a>
+                        <a href="/offers" class="cancel-link"
+                            >Cancel and go back</a
+                        >
                     </div>
                 </div>
             </aside>
@@ -225,18 +271,25 @@
 
                 <div class="items-grid">
                     {#each getItemsForStep(step) as item (item.id)}
-                        <button 
-                            class="item-card glass {selections[steps[step].id]?.id === item.id ? 'selected' : ''}"
+                        <button
+                            class="item-card glass {selections[steps[step].id]
+                                ?.id === item.id
+                                ? 'selected'
+                                : ''}"
                             onclick={() => selectItem(steps[step].id, item)}
                         >
                             {#if item.image_url}
-                                <img src={item.image_url} alt={item.name} class="item-img" />
+                                <img
+                                    src={item.image_url}
+                                    alt={item.name}
+                                    class="item-img"
+                                />
                             {:else}
                                 <div class="item-img-placeholder">
                                     <ShoppingBag size={32} />
                                 </div>
                             {/if}
-                            
+
                             <div class="item-info">
                                 <div class="item-name">{item.name}</div>
                                 {#if item.description}
@@ -259,40 +312,56 @@
                         <button class="nav-btn prev" onclick={prevStep}>
                             <ChevronLeft size={24} />
                         </button>
-                        
+
                         <div class="footer-info">
-                            <div class="footer-price">€{deal.price.toFixed(2)}</div>
-                            <div class="footer-step">Step {step + 1}/{steps.length}</div>
+                            <div class="footer-price">
+                                €{deal.price.toFixed(2)}
+                            </div>
+                            <div class="footer-step">
+                                Step {step + 1}/{steps.length}
+                            </div>
                         </div>
 
                         {#if step < steps.length - 1}
-                            <button class="nav-btn next" onclick={nextStep} disabled={!isStepComplete}>
+                            <button
+                                class="nav-btn next"
+                                onclick={nextStep}
+                                disabled={!isStepComplete}
+                            >
                                 <ChevronRight size={24} />
                             </button>
                         {:else}
-                            <button class="btn btn-accent btn-sm" onclick={addToCart} disabled={!isAllComplete}>
+                            <button
+                                class="btn btn-accent btn-sm"
+                                onclick={addToCart}
+                                disabled={!isAllComplete}
+                            >
                                 <ShoppingBag size={18} />
                             </button>
                         {/if}
                     </div>
                 </div>
 
-                 <!-- Desktop Bottom Nav if needed, but sidebar has it -->
-                 <div class="desktop-nav-footer desktop-only">
-                     {#if step > 0}
+                <!-- Desktop Bottom Nav if needed, but sidebar has it -->
+                <div class="desktop-nav-footer desktop-only">
+                    {#if step > 0}
                         <button class="btn btn-outline" onclick={prevStep}>
                             <ChevronLeft size={18} /> Previous Step
                         </button>
-                     {:else}
+                    {:else}
                         <div></div>
-                     {/if}
+                    {/if}
 
-                     {#if step < steps.length - 1}
-                        <button class="btn btn-primary" onclick={nextStep} disabled={!isStepComplete}>
+                    {#if step < steps.length - 1}
+                        <button
+                            class="btn btn-primary"
+                            onclick={nextStep}
+                            disabled={!isStepComplete}
+                        >
                             Next Step <ChevronRight size={18} />
                         </button>
-                     {/if}
-                 </div>
+                    {/if}
+                </div>
             </main>
         </div>
     {/if}
@@ -373,8 +442,15 @@
         color: var(--color-accent);
     }
 
-    .price-tag .currency { font-size: var(--text-xl); font-weight: var(--weight-bold); }
-    .price-tag .amount { font-size: 3rem; font-weight: var(--weight-black); line-height: 1; }
+    .price-tag .currency {
+        font-size: var(--text-xl);
+        font-weight: var(--weight-bold);
+    }
+    .price-tag .amount {
+        font-size: 3rem;
+        font-weight: var(--weight-black);
+        line-height: 1;
+    }
 
     .builder-progress {
         display: flex;
@@ -424,13 +500,13 @@
         gap: var(--space-3);
         padding: var(--space-3);
         border-radius: var(--radius-lg);
-        background: rgba(255,255,255,0.02);
+        background: rgba(255, 255, 255, 0.02);
         border: 1px solid transparent;
         transition: all 0.2s;
     }
 
     .summary-list li.active {
-        background: rgba(255,255,255,0.05);
+        background: rgba(255, 255, 255, 0.05);
         border-color: var(--color-border);
     }
 
@@ -445,12 +521,25 @@
         background: var(--color-border);
     }
 
-    .active .summary-dot { background: var(--color-primary); box-shadow: 0 0 10px var(--color-primary); }
-    .filled .summary-dot { background: var(--color-success); }
+    .active .summary-dot {
+        background: var(--color-primary);
+        box-shadow: 0 0 10px var(--color-primary);
+    }
+    .filled .summary-dot {
+        background: var(--color-success);
+    }
 
-    .summary-text { flex: 1; }
-    .summary-step-title { font-size: var(--text-xs); color: var(--color-text-muted); }
-    .summary-step-value { font-size: var(--text-sm); font-weight: var(--weight-semibold); }
+    .summary-text {
+        flex: 1;
+    }
+    .summary-step-title {
+        font-size: var(--text-xs);
+        color: var(--color-text-muted);
+    }
+    .summary-step-value {
+        font-size: var(--text-sm);
+        font-weight: var(--weight-semibold);
+    }
 
     .cancel-link {
         display: block;
@@ -478,7 +567,9 @@
         margin-bottom: var(--space-1);
     }
 
-    .selection-header p { color: var(--color-text-secondary); }
+    .selection-header p {
+        color: var(--color-text-secondary);
+    }
 
     .items-grid {
         display: grid;
@@ -522,7 +613,7 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        color: rgba(255,255,255,0.1);
+        color: rgba(255, 255, 255, 0.1);
     }
 
     .item-info {
@@ -580,7 +671,7 @@
         justify-content: space-between;
         background: rgba(15, 15, 26, 0.8) !important;
         backdrop-filter: blur(20px) !important;
-        box-shadow: 0 -10px 40px rgba(0,0,0,0.5);
+        box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.5);
     }
 
     .nav-btn {
@@ -595,11 +686,23 @@
         transition: all 0.2s;
     }
 
-    .nav-btn:disabled { opacity: 0.3; }
+    .nav-btn:disabled {
+        opacity: 0.3;
+    }
 
-    .footer-info { text-align: center; }
-    .footer-price { font-weight: var(--weight-black); font-size: var(--text-lg); color: var(--color-accent); }
-    .footer-step { font-size: var(--text-xs); color: var(--color-text-muted); text-transform: uppercase; }
+    .footer-info {
+        text-align: center;
+    }
+    .footer-price {
+        font-weight: var(--weight-black);
+        font-size: var(--text-lg);
+        color: var(--color-accent);
+    }
+    .footer-step {
+        font-size: var(--text-xs);
+        color: var(--color-text-muted);
+        text-transform: uppercase;
+    }
 
     .desktop-nav-footer {
         margin-top: var(--space-8);
@@ -609,13 +712,22 @@
         justify-content: space-between;
     }
 
-    .full-width { width: 100%; border-radius: var(--radius-xl); }
+    .full-width {
+        width: 100%;
+        border-radius: var(--radius-xl);
+    }
 
-    .desktop-only { display: none; }
+    .desktop-only {
+        display: none;
+    }
 
     @media (min-width: 1024px) {
-        .mobile-only { display: none; }
-        .desktop-only { display: flex; }
+        .mobile-only {
+            display: none;
+        }
+        .desktop-only {
+            display: flex;
+        }
 
         .builder-container {
             flex-direction: row;
@@ -633,6 +745,8 @@
             padding-bottom: 0;
         }
 
-        .item-name { font-size: var(--text-base); }
+        .item-name {
+            font-size: var(--text-base);
+        }
     }
 </style>
