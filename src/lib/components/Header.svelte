@@ -143,10 +143,18 @@
     }
 
     .logo-img {
-        height: 44px;
+        height: 54px;
         width: auto;
         object-fit: contain;
         mix-blend-mode: lighten;
+        filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.6));
+    }
+
+    .logo-text {
+        font-size: 24px;
+        font-weight: 700;
+        color: white;
+        text-shadow: 0 4px 6px rgba(0, 0, 0, 0.6);
     }
 
     .nav-btn {
