@@ -1,14 +1,25 @@
 <script lang="ts">
-    import { page } from '$app/stores';
-    import { goto } from '$app/navigation';
-    import { onMount } from 'svelte';
-    import { createClient } from '$lib/supabase/client';
-    import { APP_NAME } from '$lib/constants';
-    import { cn } from '$lib/utils';
-    import type { Profile } from '$lib/types';
-    import { LayoutDashboard, ShoppingBag, BookOpen, Grid3x3, ChefHat, LogOut, Loader2, Ticket, Settings } from 'lucide-svelte';
-    import { settings } from '$lib/stores/settings';
-    
+    import { page } from "$app/stores";
+    import { goto } from "$app/navigation";
+    import { onMount } from "svelte";
+    import { createClient } from "$lib/supabase/client";
+    import { APP_NAME } from "$lib/constants";
+    import { cn } from "$lib/utils";
+    import type { Profile } from "$lib/types";
+    import {
+        LayoutDashboard,
+        ShoppingBag,
+        BookOpen,
+        Grid3x3,
+        ChefHat,
+        LogOut,
+        Loader2,
+        Ticket,
+        Settings,
+        Image,
+    } from "lucide-svelte";
+    import { settings } from "$lib/stores/settings";
+
     let { children } = $props();
 
     onMount(() => {
@@ -18,30 +29,44 @@
     let profile = $state<Profile | null>(null);
     let loading = $state(true);
     let currentPath = $derived($page.url.pathname);
-    let isLoginPage = $derived(currentPath === '/admin/login');
+    let isLoginPage = $derived(currentPath === "/admin/login");
 
     async function checkAuth() {
-        if (isLoginPage) { loading = false; return; }
-        
+        if (isLoginPage) {
+            loading = false;
+            return;
+        }
+
         if (!profile) loading = true;
 
         const supabase = createClient();
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) { goto('/admin/login'); return; }
+        const {
+            data: { user },
+        } = await supabase.auth.getUser();
+        if (!user) {
+            goto("/admin/login");
+            return;
+        }
 
         const { data: profileData } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('id', user.id)
+            .from("profiles")
+            .select("*")
+            .eq("id", user.id)
             .single();
 
-        if (!profileData) { goto('/admin/login'); return; }
+        if (!profileData) {
+            goto("/admin/login");
+            return;
+        }
         profile = profileData;
         loading = false;
 
         // Role-based Redirect Protection
-        if (profile.role === 'chef' && !currentPath.startsWith('/admin/kitchen')) {
-            goto('/admin/kitchen');
+        if (
+            profile.role === "chef" &&
+            !currentPath.startsWith("/admin/kitchen")
+        ) {
+            goto("/admin/kitchen");
         }
     }
 
@@ -55,22 +80,23 @@
         profile = null; // Clear state immediately
         const supabase = createClient();
         await supabase.auth.signOut();
-        goto('/admin/login', { replaceState: true });
+        goto("/admin/login", { replaceState: true });
     }
 
-    let isManager = $derived(profile?.role === 'manager');
+    let isManager = $derived(profile?.role === "manager");
 
     const managerLinks = [
-        { href: '/admin/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-        { href: '/admin/orders', label: 'Orders', icon: ShoppingBag },
-        { href: '/admin/menu', label: 'Menu', icon: BookOpen },
-        { href: '/admin/offers', label: 'Offers', icon: Ticket },
-        { href: '/admin/tables', label: 'Tables', icon: Grid3x3 },
-        { href: '/admin/settings', label: 'Settings', icon: Settings },
+        { href: "/admin/dashboard", label: "Dashboard", icon: LayoutDashboard },
+        { href: "/admin/orders", label: "Orders", icon: ShoppingBag },
+        { href: "/admin/menu", label: "Menu", icon: BookOpen },
+        { href: "/admin/offers", label: "Offers", icon: Ticket },
+        { href: "/admin/tables", label: "Tables", icon: Grid3x3 },
+        { href: "/admin/media", label: "Media", icon: Image },
+        { href: "/admin/settings", label: "Settings", icon: Settings },
     ];
 
     const chefLinks = [
-        { href: '/admin/kitchen', label: 'Kitchen', icon: ChefHat },
+        { href: "/admin/kitchen", label: "Kitchen", icon: ChefHat },
     ];
 
     let navLinks = $derived(isManager ? managerLinks : chefLinks);
@@ -88,9 +114,15 @@
             <div class="sidebar-header">
                 <div class="sidebar-logo">
                     {#if $settings?.logo_url}
-                        <img src={$settings.logo_url} alt={$settings?.restaurant_name || APP_NAME} class="sidebar-logo-img" />
+                        <img
+                            src={$settings.logo_url}
+                            alt={$settings?.restaurant_name || APP_NAME}
+                            class="sidebar-logo-img"
+                        />
                     {:else}
-                        <span class="sidebar-logo-text">{$settings?.restaurant_name || APP_NAME}</span>
+                        <span class="sidebar-logo-text"
+                            >{$settings?.restaurant_name || APP_NAME}</span
+                        >
                     {/if}
                 </div>
             </div>
@@ -99,7 +131,10 @@
                 {#each navLinks as link}
                     <a
                         href={link.href}
-                        class={cn('sidebar-link', currentPath === link.href && 'sidebar-link-active')}
+                        class={cn(
+                            "sidebar-link",
+                            currentPath === link.href && "sidebar-link-active",
+                        )}
                     >
                         <link.icon size={18} />
                         {link.label}
@@ -110,10 +145,12 @@
             <div class="sidebar-footer">
                 <div class="sidebar-user">
                     <div class="sidebar-avatar">
-                        {profile?.full_name?.charAt(0).toUpperCase() || '?'}
+                        {profile?.full_name?.charAt(0).toUpperCase() || "?"}
                     </div>
                     <div class="sidebar-user-info">
-                        <div class="sidebar-user-name">{profile?.full_name}</div>
+                        <div class="sidebar-user-name">
+                            {profile?.full_name}
+                        </div>
                         <div class="sidebar-user-role">{profile?.role}</div>
                     </div>
                 </div>
@@ -152,7 +189,9 @@
         background: var(--color-bg-secondary);
         border-right: 1px solid var(--color-border);
         position: fixed;
-        top: 0; left: 0; bottom: 0;
+        top: 0;
+        left: 0;
+        bottom: 0;
         display: flex;
         flex-direction: column;
         z-index: var(--z-sticky);
@@ -247,9 +286,14 @@
     }
 
     .sidebar-avatar {
-        width: 36px; height: 36px;
+        width: 36px;
+        height: 36px;
         border-radius: var(--radius-full);
-        background: linear-gradient(135deg, var(--color-primary), var(--color-accent));
+        background: linear-gradient(
+            135deg,
+            var(--color-primary),
+            var(--color-accent)
+        );
         display: flex;
         align-items: center;
         justify-content: center;
@@ -267,7 +311,11 @@
     }
 
     @media (max-width: 1024px) {
-        .sidebar { display: none; }
-        .admin-main { margin-left: 0; }
+        .sidebar {
+            display: none;
+        }
+        .admin-main {
+            margin-left: 0;
+        }
     }
 </style>
