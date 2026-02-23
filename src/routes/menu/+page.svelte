@@ -829,7 +829,8 @@
     .menu-card-image {
         width: 100%;
         aspect-ratio: 16/10;
-        object-fit: cover;
+        object-fit: contain;
+        background: rgba(0, 0, 0, 0.2);
     }
 
     .menu-list .menu-card-image {

@@ -188,7 +188,8 @@
     .deal-img {
         width: 100%;
         height: 180px;
-        object-fit: cover;
+        object-fit: contain;
+        background: rgba(255, 255, 255, 0.05);
     }
 
     .deal-placeholder {

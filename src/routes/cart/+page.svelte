@@ -228,7 +228,8 @@
     .cart-item-image {
         width: 100px;
         height: 80px;
-        object-fit: cover;
+        object-fit: contain;
+        background: rgba(255, 255, 255, 0.05);
         border-radius: var(--radius-lg);
         flex-shrink: 0;
     }

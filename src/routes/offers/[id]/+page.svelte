@@ -603,7 +603,8 @@
     .item-img {
         width: 100%;
         aspect-ratio: 16/10;
-        object-fit: cover;
+        object-fit: contain;
+        background: rgba(255, 255, 255, 0.02);
     }
 
     .item-img-placeholder {
