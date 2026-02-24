@@ -213,7 +213,17 @@
          ============================================================ -->
     <section class="hero" id="hero">
         <div class="hero-bg">
-            <img src="/images/hero-bg.jpg" alt="" class="hero-bg-img" />
+            <picture>
+                <source
+                    media="(min-width: 768px)"
+                    srcset="/images/hero-bg-desktop.jpg"
+                />
+                <img
+                    src="/images/hero-bg-mobile.jpg"
+                    alt=""
+                    class="hero-bg-img"
+                />
+            </picture>
             <div class="hero-bg-overlay"></div>
         </div>
 
@@ -322,23 +332,19 @@
                 </div>
                 <div class="story-content">
                     <p class="story-lead">
-                        Pizza Mania was born from a simple dream — to bring the
-                        authentic taste of Italy to Jumet, Belgium.
+                        It all started with a simple love for good food and good
+                        company. I’m Suleman, and I wanted to create a place
+                        where people could feel at home, share a laugh, and
+                        enjoy dishes made with care.
                     </p>
                     <p>
-                        Growing up in a family where food was the center of
-                        every gathering, our founder learned the art of pizza
-                        making from generations of tradition. Every recipe
-                        carries the warmth of family kitchens and the bold
-                        flavors of Italy's finest regions.
+                        Every recipe here has a bit of my story — memories from
+                        my childhood kitchen, flavors I discovered while
+                        traveling, and a passion for bringing people together.
+                        Our goal is simple: serve food that makes you smile and
+                        a space where everyone belongs.
                     </p>
-                    <p>
-                        We don't just make pizza — we craft experiences. From
-                        hand-kneading our dough every morning with imported
-                        Italian flour, to sourcing the freshest mozzarella and
-                        San Marzano tomatoes, every step reflects our commitment
-                        to quality and authenticity.
-                    </p>
+                    <p>Welcome to our table — make yourself at home.</p>
                     <div class="story-values">
                         <div class="value-item">
                             <div class="value-icon"><Flame size={18} /></div>
@@ -586,7 +592,7 @@
                     <span class="stat-label">Oven Temperature</span>
                 </div>
                 <div class="stat-item">
-                    <span class="stat-number">90s</span>
+                    <span class="stat-number">10min</span>
                     <span class="stat-label">Cooking Time</span>
                 </div>
                 <div class="stat-item">
@@ -941,12 +947,19 @@
         overflow: hidden;
     }
 
+    .hero-bg picture {
+        display: block;
+        width: 100%;
+        height: 100%;
+    }
+
     .hero-bg-img {
         width: 100%;
         height: 100%;
+        rotate: unset;
         object-fit: cover;
         object-position: center 30%;
-        animation: heroZoom 20s ease-in-out infinite alternate;
+        animation: heroZoom 10s ease-in-out infinite alternate;
     }
 
     @keyframes heroZoom {
@@ -993,8 +1006,8 @@
     }
 
     .hero-logo-img {
-        width: 80%;
-        max-width: 80%;
+        width: 90%;
+        max-width: 90%;
         height: auto;
         display: block;
         object-fit: contain;
@@ -1004,6 +1017,7 @@
     @media (min-width: 768px) {
         .hero-logo-img {
             max-width: 520px; /* adjust if needed */
+            padding-top: 60px;
         }
     }
 
@@ -1884,12 +1898,16 @@
 
     .gallery-modal-item {
         border-radius: var(--radius-xl);
-        overflow: hidden;
         background: var(--color-bg-tertiary);
         border: 1px solid var(--color-border);
-        transition: all var(--transition-fast);
         display: flex;
         flex-direction: column;
+    }
+
+    .gallery-modal-item img,
+    .gallery-modal-item video {
+        overflow: hidden;
+        border-radius: var(--radius-xl);
     }
 
     .gallery-modal-item:hover {

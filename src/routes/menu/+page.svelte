@@ -139,6 +139,221 @@
         selectedItem = null;
     }
 
+    function ingredientWithEmoji(name: string): string {
+        const map: Record<string, string> = {
+            // Sauces
+            "sauce tomate": "🍅",
+            "tomato sauce": "🍅",
+            "crème fraîche": "🥛",
+            "creme fraiche": "🥛",
+            crème: "🥛",
+            cream: "🥛",
+            "sauce blanche": "🥛",
+            "white sauce": "🥛",
+            "sauce barbecue": "🍖",
+            "bbq sauce": "🍖",
+            pesto: "🌿",
+            "huile d'olive": "🫒",
+            "olive oil": "🫒",
+            "sauce curry": "🍛",
+            "curry sauce": "🍛",
+            "base tomate": "🍅",
+            "sauce bolognaise": "🍝",
+            bolognese: "🍝",
+
+            // Cheeses
+            mozzarella: "🧀",
+            chèvre: "🐐",
+            "goat cheese": "🐐",
+            "fromage de chèvre": "🐐",
+            gorgonzola: "🫕",
+            emmental: "🧀",
+            parmesan: "🧀",
+            parmigiano: "🧀",
+            ricotta: "🥛",
+            burrata: "🤍",
+            cheddar: "🧀",
+            fromage: "🧀",
+            cheese: "🧀",
+            "quatre fromages": "🧀",
+            "4 fromages": "🧀",
+            raclette: "🫕",
+            roquefort: "🔵",
+            mascarpone: "🍰",
+            feta: "🧊",
+            brie: "🧀",
+            comté: "🧀",
+
+            // Meats
+            jambon: "🥩",
+            ham: "🥩",
+            pepperoni: "🔴",
+            salami: "🔴",
+            chorizo: "🌶️",
+            merguez: "🌭",
+            lardons: "🥓",
+            bacon: "🥓",
+            poulet: "🍗",
+            chicken: "🍗",
+            dinde: "🦃",
+            turkey: "🦃",
+            boeuf: "🥩",
+            beef: "🥩",
+            "viande hachée": "🥩",
+            "ground beef": "🥩",
+            steak: "🥩",
+            kebab: "🥙",
+            döner: "🥙",
+            saucisse: "🌭",
+            sausage: "🌭",
+            prosciutto: "🇮🇹",
+            coppa: "🇮🇹",
+            speck: "🇮🇹",
+            pancetta: "🥓",
+            nduja: "🌶️",
+
+            // Seafood
+            thon: "🐟",
+            tuna: "🐟",
+            saumon: "🍣",
+            salmon: "🍣",
+            anchois: "🐟",
+            anchovies: "🐟",
+            crevettes: "🦐",
+            shrimp: "🦐",
+            "fruits de mer": "🦞",
+            seafood: "🦞",
+            moules: "🦪",
+            mussels: "🦪",
+            calamars: "🦑",
+            calamari: "🦑",
+
+            // Vegetables
+            champignons: "🍄",
+            mushrooms: "🍄",
+            oignons: "🧅",
+            onions: "🧅",
+            "oignons rouges": "🧅",
+            "red onions": "🧅",
+            poivrons: "🫑",
+            peppers: "🫑",
+            poivron: "🫑",
+            pepper: "🫑",
+            olives: "🫒",
+            olive: "🫒",
+            "olives noires": "🫒",
+            "black olives": "🫒",
+            "olives vertes": "🫒",
+            tomates: "🍅",
+            tomatoes: "🍅",
+            "tomates fraîches": "🍅",
+            "tomates cerises": "🍅",
+            "cherry tomatoes": "🍅",
+            épinards: "🥬",
+            spinach: "🥬",
+            roquette: "🥬",
+            arugula: "🥬",
+            salade: "🥗",
+            lettuce: "🥗",
+            maïs: "🌽",
+            corn: "🌽",
+            artichaut: "🌻",
+            artichoke: "🌻",
+            aubergine: "🍆",
+            eggplant: "🍆",
+            courgette: "🥒",
+            zucchini: "🥒",
+            brocoli: "🥦",
+            broccoli: "🥦",
+            "pommes de terre": "🥔",
+            potatoes: "🥔",
+            ail: "🧄",
+            garlic: "🧄",
+            câpres: "🟢",
+            capers: "🟢",
+            jalapeño: "🌶️",
+            jalapeno: "🌶️",
+            piment: "🌶️",
+            chili: "🌶️",
+            avocat: "🥑",
+            avocado: "🥑",
+            cornichons: "🥒",
+            pickles: "🥒",
+
+            // Fruits
+            ananas: "🍍",
+            pineapple: "🍍",
+            figues: "🪻",
+            figs: "🪻",
+            noix: "🥜",
+            walnuts: "🥜",
+            noisettes: "🌰",
+            hazelnuts: "🌰",
+
+            // Herbs & Spices
+            basilic: "🌿",
+            basil: "🌿",
+            origan: "🌿",
+            oregano: "🌿",
+            persil: "🌿",
+            parsley: "🌿",
+            herbes: "🌿",
+            herbs: "🌿",
+            truffe: "🖤",
+            truffle: "🖤",
+            "huile truffe": "🖤",
+            "truffle oil": "🖤",
+
+            // Eggs & Others
+            oeuf: "🥚",
+            egg: "🥚",
+            œuf: "🥚",
+            miel: "🍯",
+            honey: "🍯",
+            nutella: "🍫",
+            chocolat: "🍫",
+            chocolate: "🍫",
+            sucre: "🍬",
+            sugar: "🍬",
+
+            // Condiments
+            ketchup: "🟥",
+            mayonnaise: "🥫",
+            mayo: "🥫",
+            moutarde: "🟡",
+            mustard: "🟡",
+            "vinaigre balsamique": "🍶",
+            balsamic: "🍶",
+
+            // Bread/Dough
+            pain: "🍞",
+            bread: "🍞",
+            focaccia: "🫓",
+            pâte: "🫓",
+            dough: "🫓",
+
+            // Frites / Sides
+            frites: "🍟",
+            fries: "🍟",
+            "pommes frites": "🍟",
+        };
+
+        const key = name.toLowerCase().trim();
+
+        // Exact match
+        if (map[key]) return `${map[key]} ${name.trim()}`;
+
+        // Partial / keyword match
+        for (const [ingredient, emoji] of Object.entries(map)) {
+            if (key.includes(ingredient) || ingredient.includes(key)) {
+                return `${emoji} ${name.trim()}`;
+            }
+        }
+
+        // Default
+        return `🍽️ ${name.trim()}`;
+    }
+
     let currentOrderType = $state<"delivery" | "pickup" | "dine_in" | null>(
         null,
     );
@@ -376,8 +591,15 @@
 
                 <div class="modal-body">
                     <h2 class="modal-title">{selectedItem.name}</h2>
-                    {#if selectedItem.description}
+                    <!-- {#if selectedItem.description}
                         <div class="modal-desc">{selectedItem.description}</div>
+                    {/if} -->
+                    {#if selectedItem.description}
+                        <ul class="modal-desc">
+                            {#each selectedItem.description.split(",") as ingredient}
+                                <li>{ingredientWithEmoji(ingredient)}</li>
+                            {/each}
+                        </ul>
                     {/if}
                     <div class="modal-price">{formatPrice(modalPrice)}</div>
 

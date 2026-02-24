@@ -34,10 +34,20 @@
 >
     <div class="header-inner">
         <!-- Left: Logo -->
-        <div class="header-left">
-            <span class="logo">
-                <span class="logo-text"></span>
-            </span>
+        <div class={cn("header-left", isHome && !scrolled && "hidden")}>
+            <a href="/" class="logo">
+                {#if $settings?.logo_url}
+                    <img
+                        src={$settings.logo_url}
+                        alt={$settings?.restaurant_name || "Pizza Mania"}
+                        class="logo-img"
+                    />
+                {:else}
+                    <span class="logo-text"
+                        >{$settings?.restaurant_name || "Pizza Mania"}</span
+                    >
+                {/if}
+            </a>
         </div>
 
         <!-- Right: Cart + Menu Toggle -->
@@ -130,6 +140,14 @@
         display: flex;
         align-items: center;
         text-decoration: none;
+    }
+
+    .logo-img {
+        height: 35px;
+        width: auto;
+        object-fit: contain;
+        mix-blend-mode: lighten;
+        filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.6));
     }
 
     .logo-text {
@@ -228,5 +246,9 @@
     .nav-link-active {
         color: var(--color-primary) !important;
         background: rgba(230, 57, 70, 0.08) !important;
+    }
+
+    .hidden {
+        opacity: 0;
     }
 </style>
