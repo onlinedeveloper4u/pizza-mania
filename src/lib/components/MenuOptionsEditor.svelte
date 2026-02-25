@@ -98,7 +98,7 @@
                                     />
                                 </div>
                                 <button type="button" class="btn btn-ghost btn-xs text-danger" onclick={() => removeChoice(gIdx, cIdx)} disabled={group.choices.length <= 1}>
-                                    <Trash2 size={12} />
+                                    <Trash2 size={24} />
                                 </button>
                             </div>
                         {/each}

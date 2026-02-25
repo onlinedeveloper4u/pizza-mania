@@ -1056,7 +1056,7 @@
         width: 100%;
         aspect-ratio: 16/10;
         object-fit: contain;
-        background: rgba(0, 0, 0, 0.2);
+        background: white;
     }
 
     .menu-list .menu-card-image {
@@ -1264,7 +1264,8 @@
     .modal-image {
         width: 100%;
         aspect-ratio: 16/9;
-        object-fit: cover;
+        object-fit: contain;
+        background: white;
     }
 
     .modal-image-placeholder {

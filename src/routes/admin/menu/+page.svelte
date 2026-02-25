@@ -1,7 +1,7 @@
 <script lang="ts">
     import { onMount } from 'svelte';
     import { settings } from '$lib/stores/settings';
-    import { Plus, Edit2, Trash2, UtensilsCrossed } from 'lucide-svelte';
+    import { Plus, Edit2, Trash2, UtensilsCrossed, Pen } from 'lucide-svelte';
     import { createClient } from '$lib/supabase/client';
     import type { Category, MenuItem } from '$lib/types';
     import { formatPrice, cn } from '$lib/utils';
@@ -184,7 +184,7 @@
                     <div class="menu-item-card-price">{formatPrice(item.price)}</div>
                     <div class="menu-item-card-actions">
                         <button class="btn btn-outline btn-sm" onclick={() => openItemModal(item)}>
-                            <Edit2 size={12} /> Edit
+                            <Pen size={16} /> Edit
                         </button>
                         <button class="btn btn-ghost btn-sm" onclick={() => toggleAvailability(item)}>
                             {item.is_available ? 'Hide' : 'Show'}
@@ -306,7 +306,7 @@
     .menu-items-list { display:grid; grid-template-columns:repeat(auto-fill,minmax(210px,1fr)); gap:var(--space-4); min-width: 0; }
     .menu-item-card { background:var(--color-bg-glass); border:1px solid var(--color-border); border-radius:var(--radius-xl); padding:var(--space-4); transition:all var(--transition-fast); display:flex; flex-direction:column; }
     .menu-item-card:hover { border-color:var(--color-border-hover); }
-    .menu-item-card-img { width:100%; aspect-ratio:16/9; border-radius:var(--radius-md); object-fit:cover; margin-bottom:var(--space-3); }
+    .menu-item-card-img { width:100%; aspect-ratio:16/9; border-radius:var(--radius-md); object-fit:contain; margin-bottom:var(--space-3); background:white; }
     .menu-item-card-placeholder { width:100%; aspect-ratio:16/9; border-radius:var(--radius-md); background:var(--color-bg-tertiary); display:flex; align-items:center; justify-content:center; margin-bottom:var(--space-3); }
     .menu-item-card-name { font-weight:var(--weight-semibold); margin-bottom:var(--space-1); }
     .menu-item-card-price { color:var(--color-primary); font-weight:var(--weight-bold); margin-bottom:var(--space-3); }

@@ -17,6 +17,8 @@
         Ticket,
         Settings,
         Image,
+        Menu,
+        X,
     } from "lucide-svelte";
     import { settings } from "$lib/stores/settings";
 
@@ -30,6 +32,22 @@
     let loading = $state(true);
     let currentPath = $derived($page.url.pathname);
     let isLoginPage = $derived(currentPath === "/admin/login");
+
+    let sidebarOpen = $state(false);
+
+    function toggleSidebar() {
+        sidebarOpen = !sidebarOpen;
+    }
+
+    function closeSidebar() {
+        sidebarOpen = false;
+    }
+
+    // Close sidebar on navigation
+    $effect(() => {
+        currentPath;
+        sidebarOpen = false;
+    });
 
     async function checkAuth() {
         if (isLoginPage) {
@@ -110,7 +128,45 @@
     </div>
 {:else}
     <div class="admin-layout">
-        <aside class="sidebar">
+        <!-- Mobile Top Bar -->
+        <header class="mobile-topbar">
+            <div class="mobile-topbar-logo">
+                {#if $settings?.logo_url}
+                    <img
+                        src={$settings.logo_url}
+                        alt={$settings?.restaurant_name || APP_NAME}
+                        class="sidebar-logo-img"
+                    />
+                {:else}
+                    <span class="sidebar-logo-text"
+                        >{$settings?.restaurant_name || APP_NAME}</span
+                    >
+                {/if}
+            </div>
+            <button
+                class="mobile-menu-btn"
+                onclick={toggleSidebar}
+                aria-label="Toggle menu"
+            >
+                {#if sidebarOpen}
+                    <X size={24} />
+                {:else}
+                    <Menu size={24} />
+                {/if}
+            </button>
+        </header>
+
+        <!-- Overlay -->
+        {#if sidebarOpen}
+            <button
+                class="sidebar-overlay"
+                onclick={closeSidebar}
+                aria-label="Close menu"
+                tabindex="-1"
+            ></button>
+        {/if}
+
+        <aside class="sidebar" class:sidebar-open={sidebarOpen}>
             <div class="sidebar-header">
                 <div class="sidebar-logo">
                     {#if $settings?.logo_url}
@@ -135,6 +191,7 @@
                             "sidebar-link",
                             currentPath === link.href && "sidebar-link-active",
                         )}
+                        onclick={closeSidebar}
                     >
                         <link.icon size={18} />
                         {link.label}
@@ -310,12 +367,102 @@
         min-width: 0;
     }
 
+    /* Mobile Top Bar */
+    .mobile-topbar {
+        display: none;
+    }
+
+    .mobile-menu-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 44px;
+        height: 44px;
+        border-radius: var(--radius-lg);
+        color: var(--color-text-primary);
+        background: none;
+        border: none;
+        cursor: pointer;
+        transition: background var(--transition-fast);
+    }
+
+    .mobile-menu-btn:hover {
+        background: var(--color-bg-glass);
+    }
+
+    /* Overlay */
+    .sidebar-overlay {
+        display: none;
+    }
+
     @media (max-width: 1024px) {
-        .sidebar {
-            display: none;
+        /* Mobile top bar */
+        .mobile-topbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 56px;
+            padding: 0 var(--space-4);
+            background: var(--color-bg-secondary);
+            border-bottom: 1px solid var(--color-border);
+            z-index: calc(var(--z-sticky) + 1);
         }
+
+        .mobile-topbar-logo {
+            display: flex;
+            align-items: center;
+        }
+
+        .mobile-topbar-logo .sidebar-logo-img {
+            height: 36px;
+        }
+
+        .mobile-topbar-logo .sidebar-logo-text {
+            font-size: var(--text-lg);
+        }
+
+        /* Sidebar drawer */
+        .sidebar {
+            transform: translateX(-100%);
+            transition: transform var(--transition-base);
+            z-index: calc(var(--z-overlay) + 1);
+            top: 0;
+        }
+
+        .sidebar.sidebar-open {
+            transform: translateX(0);
+        }
+
+        /* Overlay */
+        .sidebar-overlay {
+            display: block;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.6);
+            z-index: var(--z-overlay);
+            border: none;
+            cursor: default;
+            animation: fadeIn 200ms ease-out;
+        }
+
+        /* Main content adjustments */
         .admin-main {
             margin-left: 0;
+            padding-top: calc(56px + var(--space-6));
+            padding-left: var(--space-4);
+            padding-right: var(--space-4);
+            padding-bottom: var(--space-6);
+        }
+    }
+
+    @media (max-width: 480px) {
+        .admin-main {
+            padding-left: var(--space-3);
+            padding-right: var(--space-3);
         }
     }
 </style>

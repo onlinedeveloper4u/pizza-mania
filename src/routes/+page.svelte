@@ -327,7 +327,7 @@
                     />
                     <div class="story-image-badge">
                         <Award size={16} />
-                        <span>Est. 2020</span>
+                        <span>Since 2025</span>
                     </div>
                 </div>
                 <div class="story-content">
