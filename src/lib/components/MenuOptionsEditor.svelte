@@ -124,7 +124,14 @@
     
     .group-header { display: flex; align-items: center; gap: var(--space-2); margin-bottom: var(--space-3); }
     .group-controls { display: flex; flex-direction: column; gap: 0; }
-    .group-main-fields { flex: 1; display: flex; align-items: center; gap: var(--space-3); }
+    .group-main-fields { flex: 1; display: flex; align-items: center; gap: var(--space-3); flex-direction: row; }
+
+    @media (max-width: 768px) {
+        .group-main-fields {
+            flex-direction: column;
+            align-items: stretch; /* optional — makes fields full width */
+        }
+    }
     
     .checkbox-label { display: flex; align-items: center; gap: var(--space-2); font-size: 11px; color: var(--color-text-secondary); cursor: pointer; white-space: nowrap; }
     
