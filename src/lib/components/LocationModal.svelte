@@ -10,11 +10,12 @@
         LocateFixed,
         Loader2,
     } from "lucide-svelte";
-    import { cn } from "$lib/utils";
+    import { cn, calculateDistanceInKm } from "$lib/utils";
     import { fade, scale, slide } from "svelte/transition";
     import { createClient } from "$lib/supabase/client";
     import { env } from "$env/dynamic/public";
     import { settings } from "$lib/stores/settings";
+    import { STORE_COORDINATES } from "$lib/constants";
 
     let { show = $bindable(false), onConfirm } = $props();
 
@@ -38,6 +39,16 @@
     let isLocating = $state(false);
     let mapMoved = $state(false);
     let searchTimeout: any;
+    let deliveryDistance = $state<number | null>(null);
+
+    function updateDistance(lat: number, lng: number) {
+        deliveryDistance = calculateDistanceInKm(
+            STORE_COORDINATES.lat,
+            STORE_COORDINATES.lng,
+            lat,
+            lng,
+        );
+    }
 
     let dateInput: HTMLInputElement | undefined = $state();
     let timeInput: HTMLInputElement | undefined = $state();
@@ -149,6 +160,7 @@
         map.addListener("dragend", () => {
             if (!geocoder) return;
             const center = map.getCenter();
+            updateDistance(center.lat(), center.lng());
             geocoder.geocode(
                 { location: center },
                 (results: any, status: any) => {
@@ -249,8 +261,10 @@
                 { placeId: res.placeId },
                 (results: any, status: any) => {
                     if (status === "OK" && results[0]) {
-                        map.panTo(results[0].geometry.location);
+                        const loc = results[0].geometry.location;
+                        map.panTo(loc);
                         map.setZoom(16);
+                        updateDistance(loc.lat(), loc.lng());
                     }
                 },
             );
@@ -267,6 +281,7 @@
         navigator.geolocation.getCurrentPosition(
             async (pos) => {
                 const { latitude, longitude } = pos.coords;
+                updateDistance(latitude, longitude);
 
                 if (geocoder) {
                     geocoder.geocode(
@@ -564,13 +579,21 @@
             </div>
 
             <footer class="modal-footer">
-                <button
-                    class="confirm-order-btn"
-                    onclick={handleStartOrder}
-                    disabled={!address.trim()}
-                >
-                    <span>START ORDER</span>
-                </button>
+                {#if deliveryDistance !== null && deliveryDistance > 10}
+                    <div class="distance-error">
+                        Delivery unavailable: Location is {deliveryDistance.toFixed(
+                            1,
+                        )}km away (max 10km).
+                    </div>
+                {:else}
+                    <button
+                        class="confirm-order-btn"
+                        onclick={handleStartOrder}
+                        disabled={!address.trim()}
+                    >
+                        <span>START ORDER</span>
+                    </button>
+                {/if}
             </footer>
         </div>
     </div>
@@ -1141,5 +1164,16 @@
         position: fixed;
         inset: 0;
         z-index: -1;
+    }
+
+    .distance-error {
+        color: var(--color-danger);
+        font-size: var(--text-sm);
+        text-align: center;
+        margin-bottom: var(--space-3);
+        font-weight: 500;
+        background: rgba(230, 57, 70, 0.1);
+        padding: var(--space-2);
+        border-radius: var(--radius-md);
     }
 </style>

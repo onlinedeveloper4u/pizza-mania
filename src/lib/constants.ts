@@ -62,3 +62,6 @@ export const CONTACT_INFO = {
     whatsapp: '+32470972953'
 };
 
+// Store Location for Delivery Restrictions (Jumet Centre, Charleroi)
+export const STORE_COORDINATES = { lat: 50.4386435, lng: 4.4366499 };
+
