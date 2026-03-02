@@ -244,6 +244,20 @@
         searchTimeout = setTimeout(() => performSearch(value), 400);
     }
 
+    function close() {
+        show = false;
+        showResults = false;
+        isSearching = false;
+        isLocating = false;
+        mapMoved = false;
+        searchInput = "";
+        address = "";
+        searchResults = [];
+        searchTimeout = 0;
+        deliveryTime = "now";
+        deliveryDistance = null;
+    }
+
     function selectAddress(res: {
         title: string;
         subtitle: string;
@@ -348,22 +362,18 @@
         transition:fade={{ duration: 200 }}
         role="button"
         tabindex="-1"
-        onclick={() => (show = false)}
-        onkeydown={(e) => e.key === "Escape" && (show = false)}
     >
         <div
             class="modal-content glass"
             transition:scale={{ duration: 300, start: 0.95 }}
             role="dialog"
             tabindex="-1"
-            onclick={(e) => e.stopPropagation()}
-            onkeydown={(e) => e.key === "Escape" && (show = false)}
         >
             <header class="modal-header">
                 <h2>Confirm Your Location</h2>
                 <button
                     class="close-btn"
-                    onclick={() => (show = false)}
+                    onclick={() => close()}
                     aria-label="Close"
                 >
                     <X size={24} strokeWidth={2} />
