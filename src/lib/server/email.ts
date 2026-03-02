@@ -179,7 +179,7 @@ export async function sendOrderStatusEmail(order: OrderWithItems, toEmail: strin
         });
         console.log(`Status email sent to ${toEmail} (${order.status})`);
     } catch (error) {
-        console.error('Failed to send status email:', error);
+        console.error(`Failed to send status to ${toEmail}:`, error);
     }
 }
 

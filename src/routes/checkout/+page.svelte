@@ -11,8 +11,8 @@
     import { settings } from "$lib/stores/settings";
     import { cart } from "$lib/stores/cart";
     import AddressAutocomplete from "$lib/components/AddressAutocomplete.svelte";
-    import { formatPrice, cn, calculateDistanceInKm } from "$lib/utils";
-    import { DELIVERY_FEE, STORE_COORDINATES } from "$lib/constants";
+    import { formatPrice, cn } from "$lib/utils";
+    import { DELIVERY_FEE } from "$lib/constants";
     import type {
         OrderType,
         PaymentMethod,
@@ -45,9 +45,6 @@
     let specialInstructions = $state("");
     let errors: Record<string, string> = $state({});
 
-    let deliveryDistance = $state<number | null>(null);
-    let selectedAddressCoords = $state<string | null>(null);
-
     let deliveryFee = $derived(orderType === "delivery" ? DELIVERY_FEE : 0);
     let total = $derived(currentSubtotal + deliveryFee);
 
@@ -70,42 +67,12 @@
         }
     });
 
-    function handleAddressSelect(place: any) {
-        if (place?.geometry?.location && place.formatted_address) {
-            const lat = place.geometry.location.lat();
-            const lng = place.geometry.location.lng();
-            const dist = calculateDistanceInKm(
-                STORE_COORDINATES.lat,
-                STORE_COORDINATES.lng,
-                lat,
-                lng,
-            );
-            deliveryDistance = dist;
-            selectedAddressCoords = place.formatted_address;
-
-            if (errors.address) {
-                errors = { ...errors };
-                delete errors.address;
-            }
-        }
-    }
-
     function validate(): boolean {
         const newErrors: Record<string, string> = {};
         if (!customerName.trim()) newErrors.name = "Name is required";
         if (!customerPhone.trim()) newErrors.phone = "Phone number is required";
-
-        if (orderType === "delivery") {
-            if (!deliveryAddress.trim()) {
-                newErrors.address = "Delivery address is required";
-            } else if (deliveryAddress !== selectedAddressCoords) {
-                newErrors.address =
-                    "Please select a valid address from the dropdown suggestions.";
-            } else if (deliveryDistance !== null && deliveryDistance > 10) {
-                newErrors.address = `Delivery unavailable: Location is ${deliveryDistance.toFixed(1)}km away (max 10km).`;
-            }
-        }
-
+        if (orderType === "delivery" && !deliveryAddress.trim())
+            newErrors.address = "Delivery address is required";
         errors = newErrors;
         return Object.keys(newErrors).length === 0;
     }
@@ -268,15 +235,8 @@
                                 <label class="label">Delivery Address *</label>
                                 <AddressAutocomplete
                                     bind:value={deliveryAddress}
-                                    onplace_changed={handleAddressSelect}
                                     placeholder="Street address, apartment, city, postal code"
                                 />
-                                <p
-                                    style="font-size: var(--text-xs); color: var(--color-text-muted); margin-top: var(--space-2);"
-                                >
-                                    Delivery is only available within a 10km
-                                    radius from our store.
-                                </p>
                                 {#if errors.address}<p class="error-msg">
                                         {errors.address}
                                     </p>{/if}
