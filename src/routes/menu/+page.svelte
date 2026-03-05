@@ -15,6 +15,7 @@
     import type { Category, MenuItem, MenuItemOption } from "$lib/types";
     import { formatPrice, cn, calculateItemPrice } from "$lib/utils";
     import { toast } from "svelte-sonner";
+    import { t } from "$lib/stores/language";
 
     let categories: Category[] = $state([]);
     let menuItems: MenuItem[] = $state([]);
@@ -130,12 +131,14 @@
         const options = selectedItem.options || [];
         for (const opt of options) {
             if (opt.required && !selectedOptions[opt.name]) {
-                toast.error(`Please select ${opt.name}`);
+                toast.error(
+                    $t("menu.select_required").replace("{opt}", opt.name),
+                );
                 return;
             }
         }
         cart.addItem(selectedItem, quantity, selectedOptions, notes);
-        toast.success(`${selectedItem.name} added to cart!`);
+        toast.success($t("menu.added").replace("{name}", selectedItem.name));
         selectedItem = null;
     }
 
@@ -421,7 +424,7 @@
                 <input
                     type="text"
                     class="search-input"
-                    placeholder="Search dishes..."
+                    placeholder={$t("menu.search")}
                     bind:value={searchQuery}
                     oninput={() => {
                         if (searchQuery.trim()) activeCategory = null;
@@ -470,8 +473,8 @@
         {#if filteredItems.length === 0}
             <div class="empty-state">
                 <Search size={40} />
-                <h3>No items found</h3>
-                <p>Try a different search or category</p>
+                <h3>{$t("menu.empty.title")}</h3>
+                <p>{$t("menu.empty.desc")}</p>
             </div>
         {:else}
             <div
@@ -542,7 +545,10 @@
                     class="btn btn-primary btn-lg floating-cart-btn"
                 >
                     <ShoppingCart size={18} />
-                    View Cart ({currentItemCount})
+                    {$t("menu.view_cart").replace(
+                        "{n}",
+                        String(currentItemCount),
+                    )}
                 </a>
             </div>
         {/if}
@@ -609,7 +615,7 @@
                     <div class="modal-section">
                         <div class="quantity-row">
                             <span class="label" style="margin-bottom: 0;"
-                                >Quantity</span
+                                >{$t("menu.quantity")}</span
                             >
                             <div class="quantity-controls">
                                 <button
@@ -631,12 +637,14 @@
 
                         <div class="notes-field">
                             <label class="label" for="special-notes"
-                                >Special Instructions</label
+                                >{$t("menu.instructions")}</label
                             >
                             <textarea
                                 id="special-notes"
                                 class="input"
-                                placeholder="Any special requests?"
+                                placeholder={$t(
+                                    "menu.instructions.placeholder",
+                                )}
                                 bind:value={notes}
                                 rows="2"
                             ></textarea>
@@ -654,7 +662,7 @@
                                         <span>{option.name}</span>
                                         {#if option.required}
                                             <span class="option-required"
-                                                >Required</span
+                                                >{$t("menu.required")}</span
                                             >
                                         {/if}
                                     </div>
@@ -711,7 +719,9 @@
                         class="btn btn-primary btn-lg add-to-cart-btn"
                         onclick={handleAddToCart}
                     >
-                        Add to Cart — {formatPrice(modalPrice * quantity)}
+                        {$t("menu.add_to_cart")} — {formatPrice(
+                            modalPrice * quantity,
+                        )}
                     </button>
                 </footer>
             </div>

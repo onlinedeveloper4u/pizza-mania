@@ -1,27 +1,29 @@
 <script lang="ts">
-    import { Search, Loader2 } from 'lucide-svelte';
-    import { goto } from '$app/navigation';
-    import { settings } from '$lib/stores/settings';
+    import { Search, Loader2 } from "lucide-svelte";
+    import { goto } from "$app/navigation";
+    import { settings } from "$lib/stores/settings";
+    import { t } from "$lib/stores/language";
 
-    let token = $state('');
+    let token = $state("");
     let loading = $state(false);
-    let error = $state('');
+    let error = $state("");
 
     function handleTrack(e: SubmitEvent) {
         e.preventDefault();
         if (!token.trim()) return;
-        
+
         loading = true;
-        error = '';
-        
-        // Tracking tokens are typically 8-10 chars like PM-XXXXXX
-        // But we just navigate and let the [token] page handle the lookup
+        error = "";
+
         goto(`/order/${token.trim().toUpperCase()}`);
     }
 </script>
 
 <svelte:head>
-    <title>Track Your Order — {$settings?.restaurant_name || 'Pizza Mania'}</title>
+    <title
+        >{$t("order.track.title")} — {$settings?.restaurant_name ||
+            "Pizza Mania"}</title
+    >
 </svelte:head>
 
 <div class="track-lookup-page">
@@ -30,44 +32,49 @@
             <div class="track-icon">
                 <Search size={32} />
             </div>
-            <h1>Track Your Order</h1>
-            <p>Enter your tracking token to see your order status</p>
+            <h1>{$t("order.track.title")}</h1>
+            <p>{$t("order.track.subtitle")}</p>
         </div>
 
         <form onsubmit={handleTrack} class="track-form">
             <div class="input-group">
-                <input 
-                    type="text" 
-                    bind:value={token} 
-                    placeholder="e.g. ORD-AB12CD" 
+                <input
+                    type="text"
+                    bind:value={token}
+                    placeholder={$t("order.track.placeholder")}
                     required
                     class="track-input"
                 />
             </div>
-            
+
             {#if error}
                 <p class="error-text">{error}</p>
             {/if}
 
-            <button type="submit" class="btn btn-primary" disabled={loading || !token.trim()}>
+            <button
+                type="submit"
+                class="btn btn-primary"
+                disabled={loading || !token.trim()}
+            >
                 {#if loading}
                     <Loader2 size={18} class="animate-spin" />
-                    <span>Searching...</span>
+                    <span>{$t("order.track.searching")}</span>
                 {:else}
-                    <span>Track Order</span>
+                    <span>{$t("order.track.btn")}</span>
                 {/if}
             </button>
         </form>
 
         <div class="track-help">
-            <p>Can't find your token? Check your confirmation email or SMS.</p>
+            <p>{$t("order.track.help")}</p>
         </div>
     </div>
 </div>
 
 <style>
     .track-lookup-page {
-        padding: calc(var(--header-height) + var(--space-20)) var(--space-6) var(--space-20);
+        padding: calc(var(--header-height) + var(--space-20)) var(--space-6)
+            var(--space-20);
         min-height: 80vh;
         display: flex;
         align-items: center;

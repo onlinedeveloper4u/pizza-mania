@@ -1,11 +1,12 @@
 <script lang="ts">
-    import { onMount } from 'svelte';
-    import { goto } from '$app/navigation';
-    import { page } from '$app/stores';
-    import { UtensilsCrossed, AlertCircle, Loader2 } from 'lucide-svelte';
-    import { createClient } from '$lib/supabase/client';
-    import { cart } from '$lib/stores/cart';
-    import type { Table } from '$lib/types';
+    import { onMount } from "svelte";
+    import { goto } from "$app/navigation";
+    import { page } from "$app/stores";
+    import { UtensilsCrossed, AlertCircle, Loader2 } from "lucide-svelte";
+    import { createClient } from "$lib/supabase/client";
+    import { cart } from "$lib/stores/cart";
+    import type { Table } from "$lib/types";
+    import { t } from "$lib/stores/language";
 
     let tableId = $derived($page.params.tableId);
     let table: Table | null = $state(null);
@@ -15,10 +16,10 @@
     onMount(async () => {
         const supabase = createClient();
         const { data, error: err } = await supabase
-            .from('tables')
-            .select('*')
-            .eq('id', tableId)
-            .eq('is_active', true)
+            .from("tables")
+            .select("*")
+            .eq("id", tableId)
+            .eq("is_active", true)
             .single();
 
         if (err || !data) {
@@ -33,7 +34,7 @@
     // Auto-redirect to menu after 3 seconds
     $effect(() => {
         if (table) {
-            const timer = setTimeout(() => goto('/menu'), 3000);
+            const timer = setTimeout(() => goto("/menu"), 3000);
             return () => clearTimeout(timer);
         }
     });
@@ -46,27 +47,33 @@
 {#if loading}
     <div class="centered">
         <Loader2 size={48} class="animate-spin" color="var(--color-primary)" />
-        <p>Setting up your table...</p>
+        <p>{$t("table.loading")}</p>
     </div>
 {:else if error}
     <div class="centered">
         <AlertCircle size={64} color="var(--color-danger)" />
-        <h1>Table Not Found</h1>
-        <p>This table doesn't exist or is not active. Please ask a staff member for assistance.</p>
-        <button class="btn btn-primary" onclick={() => goto('/')}>Go Home</button>
+        <h1>{$t("table.not_found")}</h1>
+        <p>{$t("table.not_found.desc")}</p>
+        <button class="btn btn-primary" onclick={() => goto("/")}
+            >{$t("table.go_home")}</button
+        >
     </div>
 {:else}
     <div class="centered">
         <div class="table-icon">
             <UtensilsCrossed size={48} color="white" />
         </div>
-        <h1>Welcome!</h1>
-        <p class="seated-text">You're seated at</p>
+        <h1>{$t("table.welcome")}</h1>
+        <p class="seated-text">{$t("table.seated")}</p>
         <div class="table-badge">Table #{table?.table_number}</div>
-        <p class="redirect-text">Redirecting to menu...</p>
-        <button class="btn btn-primary btn-lg" onclick={() => goto('/menu')} style="margin-top: var(--space-4);">
+        <p class="redirect-text">{$t("table.redirecting")}</p>
+        <button
+            class="btn btn-primary btn-lg"
+            onclick={() => goto("/menu")}
+            style="margin-top: var(--space-4);"
+        >
             <UtensilsCrossed size={18} />
-            Browse Menu Now
+            {$t("table.browse")}
         </button>
     </div>
 {/if}
@@ -90,7 +97,10 @@
         font-weight: var(--weight-bold);
     }
 
-    .centered p { color: var(--color-text-secondary); max-width: 400px; }
+    .centered p {
+        color: var(--color-text-secondary);
+        max-width: 400px;
+    }
 
     .table-icon {
         width: 96px;

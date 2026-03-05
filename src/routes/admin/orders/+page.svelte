@@ -202,7 +202,10 @@
                                         "badge",
                                         order.payment_status === "paid"
                                             ? "badge-success"
-                                            : "badge-warning",
+                                            : order.payment_status ===
+                                                "refunded"
+                                              ? "badge-info"
+                                              : "badge-warning",
                                     )}
                                 >
                                     {order.payment_status}

@@ -1,19 +1,30 @@
 <script lang="ts">
-    import { onMount } from 'svelte';
-    import { ShoppingCart, Clock, Info, Check, MapPin, Phone, Mail, ArrowRight, Loader2 } from 'lucide-svelte';
-    import { cn } from '$lib/utils';
-    import { cart } from '$lib/stores/cart';
-    import { goto } from '$app/navigation';
-    import { createClient } from '$lib/supabase/client';
-    import { settings } from '$lib/stores/settings';
-    import { APP_NAME } from '$lib/constants';
-    import { toast } from 'svelte-sonner';
+    import { onMount } from "svelte";
+    import {
+        ShoppingCart,
+        Clock,
+        Info,
+        Check,
+        MapPin,
+        Phone,
+        Mail,
+        ArrowRight,
+        Loader2,
+    } from "lucide-svelte";
+    import { cn } from "$lib/utils";
+    import { cart } from "$lib/stores/cart";
+    import { goto } from "$app/navigation";
+    import { createClient } from "$lib/supabase/client";
+    import { settings } from "$lib/stores/settings";
+    import { APP_NAME } from "$lib/constants";
+    import { toast } from "svelte-sonner";
+    import { t } from "$lib/stores/language";
 
     // Type definition to avoid simple generic confusion in runoff
-    type TabType = 'delivery' | 'takeaway';
-    let activeTab = $state('delivery' as TabType);
-    
-    let email = $state('');
+    type TabType = "delivery" | "takeaway";
+    let activeTab = $state("delivery" as TabType);
+
+    let email = $state("");
     let submitting = $state(false);
 
     // Data State
@@ -31,59 +42,63 @@
         try {
             loading = true;
             const { data, error: err } = await supabase
-                .from('deals')
-                .select('*')
-                .eq('is_active', true)
-                .order('sort_order', { ascending: true });
-            
+                .from("deals")
+                .select("*")
+                .eq("is_active", true)
+                .order("sort_order", { ascending: true });
+
             if (err) throw err;
 
             // Transform data if needed for UI (e.g. description to array)
-            offers = (data || []).map(d => ({
+            offers = (data || []).map((d) => ({
                 ...d,
-                contents: d.description ? d.description.split(',').map((s: string) => s.trim()) : []
+                contents: d.description
+                    ? d.description.split(",").map((s: string) => s.trim())
+                    : [],
             }));
         } catch (e) {
-            console.error('Error fetching deals:', e);
-            error = 'Failed to load offers. Please try again later.';
+            console.error("Error fetching deals:", e);
+            error = "Failed to load offers. Please try again later.";
         } finally {
             loading = false;
         }
     }
 
-    let displayedOffers = $derived(offers.filter(o => o.type === activeTab || o.type === 'both'));
+    let displayedOffers = $derived(
+        offers.filter((o) => o.type === activeTab || o.type === "both"),
+    );
 
     function handleOrderNow(offer: any) {
-        cart.setOrderType(activeTab === 'takeaway' ? 'pickup' : 'delivery');
+        cart.setOrderType(activeTab === "takeaway" ? "pickup" : "delivery");
         goto(`/offers/${offer.id}?type=${activeTab}`);
     }
 
     async function handleSubscribe() {
-        if (!email || !email.includes('@')) {
-            toast.error('Please enter a valid email address');
+        if (!email || !email.includes("@")) {
+            toast.error("Veuillez entrer une adresse e-mail valide");
             return;
         }
 
         try {
             submitting = true;
-            const res = await fetch('/api/newsletter', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email })
+            const res = await fetch("/api/newsletter", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ email }),
             });
 
             const data = await res.json();
 
             if (!res.ok) {
-                toast.error(data.error || 'Subscription failed');
+                toast.error(data.error || "Abonnement échoué");
                 return;
             }
 
-            toast.success(data.message || 'Subscribed successfully!');
-            email = '';
+            toast.success(data.message || "Abonnement réussi !");
+            email = "";
         } catch (err) {
-            console.error('Newsletter error:', err);
-            toast.error('Something went wrong. Please try again later.');
+            console.error("Newsletter error:", err);
+            toast.error("Une erreur est survenue. Veuillez réessayer.");
         } finally {
             submitting = false;
         }
@@ -100,9 +115,12 @@
         <div class="container header-content">
             <div class="store-info">
                 <h1>{$settings?.restaurant_name || APP_NAME}</h1>
-                <p class="city-badge"><MapPin size={14} /> {$settings?.address || 'Flavor Hub'}</p>
+                <p class="city-badge">
+                    <MapPin size={14} />
+                    {$settings?.address || "Flavor Hub"}
+                </p>
             </div>
-            <a href="/" class="back-link">Back to Home</a>
+            <a href="/" class="back-link">{$t("offers.back")}</a>
         </div>
     </header>
 
@@ -110,34 +128,44 @@
         <!-- 2. Offer Categories (Tabs) -->
         <div class="tabs-container">
             <div class="tabs">
-                <button 
-                    class={cn('tab-btn', activeTab === 'delivery' && 'active')}
-                    onclick={() => activeTab = 'delivery'}
+                <button
+                    class={cn("tab-btn", activeTab === "delivery" && "active")}
+                    onclick={() => (activeTab = "delivery")}
                 >
-                    Delivery Deals
+                    {$t("offers.delivery_tab")}
                 </button>
-                <button 
-                    class={cn('tab-btn', activeTab === 'takeaway' && 'active')}
-                    onclick={() => activeTab = 'takeaway'}
+                <button
+                    class={cn("tab-btn", activeTab === "takeaway" && "active")}
+                    onclick={() => (activeTab = "takeaway")}
                 >
-                    Takeaway Specials
+                    {$t("offers.takeaway_tab")}
                 </button>
             </div>
         </div>
 
         <!-- 3. Offer Cards -->
         {#if loading}
-            <div style="display:flex;justify-content:center;padding:var(--space-12)">
+            <div
+                style="display:flex;justify-content:center;padding:var(--space-12)"
+            >
                 <Loader2 size={48} class="animate-spin text-accent" />
             </div>
         {:else if error}
-            <div style="text-align:center;padding:var(--space-12);color:var(--color-danger)">
-                <p>{error}</p>
-                <button class="btn btn-outline btn-sm" onclick={fetchDeals} style="margin-top:1rem">Try Again</button>
+            <div
+                style="text-align:center;padding:var(--space-12);color:var(--color-danger)"
+            >
+                <p>{$t("offers.error")}</p>
+                <button
+                    class="btn btn-outline btn-sm"
+                    onclick={fetchDeals}
+                    style="margin-top:1rem">{$t("offers.try_again")}</button
+                >
             </div>
         {:else if displayedOffers.length === 0}
-            <div style="text-align:center;padding:var(--space-12);color:var(--color-text-muted)">
-                <p>No offers available for this category right now.</p>
+            <div
+                style="text-align:center;padding:var(--space-12);color:var(--color-text-muted)"
+            >
+                <p>{$t("offers.empty")}</p>
             </div>
         {/if}
 
@@ -148,36 +176,54 @@
                         <div class="offer-title-row">
                             <h3 class="offer-title">{offer.title}</h3>
                             <div class="offer-price">
-                                <span class="currency">€</span>{offer.price.toFixed(2)}
+                                <span class="currency">€</span
+                                >{offer.price.toFixed(2)}
                             </div>
                         </div>
                         {#if offer.original_price}
-                            <div class="original-price">Usually €{offer.original_price.toFixed(2)}</div>
+                            <div class="original-price">
+                                {$t("offers.usually")} €{offer.original_price.toFixed(
+                                    2,
+                                )}
+                            </div>
                         {/if}
                     </div>
-                    
+
                     <div class="offer-body">
                         <ul class="offer-contents">
                             {#each offer.contents as item}
-                                <li><Check size={16} class="text-accent" /> {item}</li>
+                                <li>
+                                    <Check size={16} class="text-accent" />
+                                    {item}
+                                </li>
                             {/each}
                         </ul>
-                        
+
                         <div class="offer-meta">
                             {#if offer.validity}
                                 <div class="validity">
-                                    <Clock size={14} /> {offer.validity}
+                                    <Clock size={14} />
+                                    {offer.validity}
                                 </div>
                             {/if}
                             <div class="conditions">
-                                <Info size={14} /> {offer.type === 'both' ? 'Delivery & Takeaway' : (offer.type === 'delivery' ? 'Delivery Only' : 'Takeaway Only')}
+                                <Info size={14} />
+                                {offer.type === "both"
+                                    ? $t("offers.both")
+                                    : offer.type === "delivery"
+                                      ? $t("offers.delivery_only")
+                                      : $t("offers.takeaway_only")}
                             </div>
                         </div>
                     </div>
 
                     <div class="offer-footer">
-                        <button class="btn btn-primary btn-lg full-width" onclick={() => handleOrderNow(offer)}>
-                            Order Now <ArrowRight size={18} />
+                        <button
+                            class="btn btn-primary btn-lg full-width"
+                            onclick={() => handleOrderNow(offer)}
+                        >
+                            {$t("offers.order_now")}
+                            <ArrowRight size={18} />
                         </button>
                     </div>
                 </div>
@@ -189,20 +235,20 @@
     <section class="newsletter-section">
         <div class="container container-sm">
             <div class="newsletter-content glass">
-                <h2>Unlock Exclusive Deals!</h2>
-                <p>Receive our best promotions in advance.</p>
+                <h2>{$t("offers.newsletter.title")}</h2>
+                <p>{$t("offers.newsletter.desc")}</p>
                 <div class="newsletter-form">
                     <div class="input-group">
                         <Mail size={20} class="input-icon" />
-                        <input 
-                            type="email" 
-                            class="input newsletter-input" 
-                            placeholder="Your email address" 
-                            bind:value={email} 
+                        <input
+                            type="email"
+                            class="input newsletter-input"
+                            placeholder={$t("offers.newsletter.placeholder")}
+                            bind:value={email}
                         />
                     </div>
                     <button class="btn btn-accent" onclick={handleSubscribe}>
-                        Subscribe
+                        {$t("offers.newsletter.subscribe")}
                     </button>
                 </div>
             </div>
@@ -213,15 +259,22 @@
     <footer class="offers-footer">
         <div class="container footer-content">
             <div class="footer-links">
-                <a href="/terms">Terms & Conditions</a>
-                <a href="/privacy">Privacy Policy</a>
+                <a href="/terms">{$t("offers.terms")}</a>
+                <a href="/privacy">{$t("offers.privacy")}</a>
             </div>
             <div class="footer-contact">
-                <div class="contact-item"><Phone size={14} /> {$settings?.phone || ''}</div>
-                <div class="contact-item"><MapPin size={14} /> {$settings?.address || ''}</div>
+                <div class="contact-item">
+                    <Phone size={14} />
+                    {$settings?.phone || ""}
+                </div>
+                <div class="contact-item">
+                    <MapPin size={14} />
+                    {$settings?.address || ""}
+                </div>
             </div>
             <div class="copyright">
-                &copy; {new Date().getFullYear()} {$settings?.restaurant_name || APP_NAME}
+                &copy; {new Date().getFullYear()}
+                {$settings?.restaurant_name || APP_NAME}
             </div>
         </div>
     </footer>
@@ -239,7 +292,7 @@
 
     /* Header */
     .offers-header {
-        background: rgba(0,0,0,0.8);
+        background: rgba(0, 0, 0, 0.8);
         backdrop-filter: blur(10px);
         border-bottom: 1px solid var(--color-border);
         padding: var(--space-4) 0;
@@ -262,8 +315,12 @@
         line-height: 1.2;
     }
 
-    .text-accent { color: var(--color-accent); }
-    .text-success { color: var(--color-success); }
+    .text-accent {
+        color: var(--color-accent);
+    }
+    .text-success {
+        color: var(--color-success);
+    }
 
     .city-badge {
         display: inline-flex;
@@ -330,7 +387,11 @@
         flex-direction: column;
         overflow: hidden;
         transition: transform var(--transition-base);
-        background: linear-gradient(135deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0.01) 100%);
+        background: linear-gradient(
+            135deg,
+            rgba(255, 255, 255, 0.03) 0%,
+            rgba(255, 255, 255, 0.01) 100%
+        );
         border: 1px solid var(--color-border);
         border-radius: var(--radius-xl);
     }
@@ -338,15 +399,19 @@
     .offer-card:hover {
         transform: translateY(-4px);
         border-color: var(--color-border-hover);
-        background: linear-gradient(135deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.02) 100%);
+        background: linear-gradient(
+            135deg,
+            rgba(255, 255, 255, 0.06) 0%,
+            rgba(255, 255, 255, 0.02) 100%
+        );
     }
 
     .offer-header {
         padding: var(--space-5);
         border-bottom: 1px solid var(--color-border);
-        background: rgba(0,0,0,0.2);
+        background: rgba(0, 0, 0, 0.2);
     }
-    
+
     .offer-title-row {
         display: flex;
         justify-content: space-between;
@@ -373,7 +438,9 @@
         white-space: nowrap;
     }
 
-    .currency { font-size: var(--text-lg); }
+    .currency {
+        font-size: var(--text-lg);
+    }
 
     .original-price {
         font-size: var(--text-sm);
@@ -416,7 +483,8 @@
         color: var(--color-text-muted);
     }
 
-    .validity, .conditions {
+    .validity,
+    .conditions {
         display: flex;
         align-items: center;
         gap: var(--space-2);
@@ -425,15 +493,18 @@
     .offer-footer {
         padding: var(--space-4);
         border-top: 1px solid var(--color-border);
-        background: rgba(0,0,0,0.2);
+        background: rgba(0, 0, 0, 0.2);
     }
 
-    .full-width { width: 100%; justify-content: space-between; }
+    .full-width {
+        width: 100%;
+        justify-content: space-between;
+    }
 
     /* Newsletter */
     .newsletter-section {
         padding: var(--space-12) 0;
-        background: linear-gradient(to top, rgba(0,0,0,0.5), transparent);
+        background: linear-gradient(to top, rgba(0, 0, 0, 0.5), transparent);
         border-top: 1px solid var(--color-border);
     }
 
@@ -442,7 +513,11 @@
         text-align: center;
         border: 1px solid var(--color-border);
         border-radius: var(--radius-2xl);
-        background: linear-gradient(135deg, rgba(255, 107, 53, 0.1), rgba(0,0,0,0.4));
+        background: linear-gradient(
+            135deg,
+            rgba(255, 107, 53, 0.1),
+            rgba(0, 0, 0, 0.4)
+        );
     }
 
     .newsletter-content h2 {
@@ -506,7 +581,9 @@
         gap: var(--space-6);
     }
 
-    .footer-links a:hover { color: var(--color-primary); }
+    .footer-links a:hover {
+        color: var(--color-primary);
+    }
 
     .footer-contact {
         display: flex;
@@ -530,7 +607,7 @@
         .newsletter-form {
             flex-direction: column;
         }
-        
+
         .tab-btn {
             padding: 8px 16px;
             font-size: var(--text-xs);

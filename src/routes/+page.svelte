@@ -34,6 +34,7 @@
     import PickupModal from "$lib/components/PickupModal.svelte";
     import { CONTACT_INFO } from "$lib/constants";
     import { createClient } from "$lib/supabase/client";
+    import { t } from "$lib/stores/language";
 
     interface LandingMedia {
         id: string;
@@ -97,24 +98,49 @@
     const eventTypes = [
         {
             icon: Building2,
-            title: "Corporate Events",
-            desc: "Team lunches, meetings & company parties",
+            titleKey: "events.corporate",
+            descKey: "events.corporate.desc",
         },
         {
             icon: GraduationCap,
-            title: "School Groups",
-            desc: "Field trips, end-of-year celebrations",
+            titleKey: "events.school",
+            descKey: "events.school.desc",
         },
         {
             icon: Cake,
-            title: "Birthday Parties",
-            desc: "Special menus & group packages",
+            titleKey: "events.birthday",
+            descKey: "events.birthday.desc",
         },
         {
             icon: Users,
-            title: "Private Parties",
-            desc: "Communions, family get-togethers & more",
+            titleKey: "events.private",
+            descKey: "events.private.desc",
         },
+    ];
+
+    const storyValues = [
+        {
+            icon: Flame,
+            titleKey: "story.wood_fired",
+            descKey: "story.wood_fired.desc",
+        },
+        {
+            icon: Leaf,
+            titleKey: "story.fresh_daily",
+            descKey: "story.fresh_daily.desc",
+        },
+        {
+            icon: Heart,
+            titleKey: "story.made_with_love",
+            descKey: "story.made_with_love.desc",
+        },
+    ];
+
+    const craftStats = [
+        { number: "48h", labelKey: "craft.stat.fermentation" },
+        { number: "450°C", labelKey: "craft.stat.temp" },
+        { number: "10min", labelKey: "craft.stat.cooking" },
+        { number: "100%", labelKey: "craft.stat.fresh" },
     ];
 
     onMount(async () => {
@@ -198,8 +224,9 @@
 
 <svelte:head>
     <title
-        >{$settings?.restaurant_name || "Pizza Mania"} — Crafted with Passion, Served
-        with Love</title
+        >{$settings?.restaurant_name || "Pizza Mania"} — {$t(
+            "hero.panel.title",
+        )}</title
     >
     <meta
         name="description"
@@ -244,7 +271,7 @@
         <!-- Bottom: Order Panel -->
         <div class="hero-bottom">
             <div class="hero-panel">
-                <p class="hero-panel-title">How would you like your order?</p>
+                <p class="hero-panel-title">{$t("hero.panel.title")}</p>
 
                 <div class="order-cards">
                     <button
@@ -255,12 +282,12 @@
                             <Truck size={26} />
                         </div>
                         <div class="order-card-info">
-                            <h2>Delivery</h2>
-                            <p>To your door</p>
+                            <h2>{$t("hero.delivery.title")}</h2>
+                            <p>{$t("hero.delivery.subtitle")}</p>
                         </div>
                         <div class="order-card-meta">
                             <Clock size={12} />
-                            <span>30–45 min</span>
+                            <span>{$t("hero.delivery.time")}</span>
                         </div>
                     </button>
 
@@ -272,12 +299,12 @@
                             <Store size={26} />
                         </div>
                         <div class="order-card-info">
-                            <h2>Pickup</h2>
-                            <p>At the counter</p>
+                            <h2>{$t("hero.pickup.title")}</h2>
+                            <p>{$t("hero.pickup.subtitle")}</p>
                         </div>
                         <div class="order-card-meta">
                             <Clock size={12} />
-                            <span>15–20 min</span>
+                            <span>{$t("hero.pickup.time")}</span>
                         </div>
                     </button>
                 </div>
@@ -285,16 +312,16 @@
                 <div class="hero-actions">
                     <a href="/offers" class="action-link offers">
                         <Ticket size={16} />
-                        <span>Special Offers</span>
+                        <span>{$t("hero.offers")}</span>
                     </a>
                     <a href="/order" class="action-link track">
                         <Search size={16} />
-                        <span>Track Order</span>
+                        <span>{$t("hero.track")}</span>
                     </a>
                 </div>
 
                 <p class="dine-in-hint">
-                    Dining in? Scan the <strong>QR code</strong> at your table
+                    {@html $t("hero.dine_in.hint")}
                 </p>
             </div>
         </div>
@@ -311,11 +338,12 @@
     <section class="section story-section" id="our-story">
         <div class="container">
             <div class="section-header">
-                <span class="section-label"><Heart size={14} /> Our Story</span>
+                <span class="section-label"
+                    ><Heart size={14} /> {$t("story.label")}</span
+                >
                 <h2 class="section-title">
-                    A Family Passion for <span class="text-gradient"
-                        >Authentic Pizza</span
-                    >
+                    {$t("story.title.1")}
+                    <span class="text-gradient">{$t("story.title.2")}</span>
                 </h2>
             </div>
             <div class="story-grid">
@@ -327,47 +355,27 @@
                     />
                     <div class="story-image-badge">
                         <Award size={16} />
-                        <span>Since 2025</span>
+                        <span>{$t("story.since")}</span>
                     </div>
                 </div>
                 <div class="story-content">
                     <p class="story-lead">
-                        It all started with a simple love for good food and good
-                        company. I’m Suleman, and I wanted to create a place
-                        where people could feel at home, share a laugh, and
-                        enjoy dishes made with care.
+                        {$t("story.lead")}
                     </p>
-                    <p>
-                        Every recipe here has a bit of my story — memories from
-                        my childhood kitchen, flavors I discovered while
-                        traveling, and a passion for bringing people together.
-                        Our goal is simple: serve food that makes you smile and
-                        a space where everyone belongs.
-                    </p>
-                    <p>Welcome to our table — make yourself at home.</p>
+                    <p>{$t("story.p1")}</p>
+                    <p>{$t("story.p2")}</p>
                     <div class="story-values">
-                        <div class="value-item">
-                            <div class="value-icon"><Flame size={18} /></div>
-                            <div>
-                                <strong>Wood-Fired</strong>
-                                <span>Traditional brick oven at 450°C</span>
+                        {#each storyValues as v}
+                            <div class="value-item">
+                                <div class="value-icon">
+                                    <v.icon size={18} />
+                                </div>
+                                <div>
+                                    <strong>{$t(v.titleKey)}</strong>
+                                    <span>{$t(v.descKey)}</span>
+                                </div>
                             </div>
-                        </div>
-                        <div class="value-item">
-                            <div class="value-icon"><Leaf size={18} /></div>
-                            <div>
-                                <strong>Fresh Daily</strong>
-                                <span>Dough made fresh every morning</span>
-                            </div>
-                        </div>
-                        <div class="value-item">
-                            <div class="value-icon"><Heart size={18} /></div>
-                            <div>
-                                <strong>Made with Love</strong>
-                                <span>Family recipes, crafted with passion</span
-                                >
-                            </div>
-                        </div>
+                        {/each}
                     </div>
                 </div>
             </div>
@@ -381,13 +389,16 @@
         <div class="container">
             <div class="section-header">
                 <span class="section-label"
-                    ><Star size={14} /> Testimonials</span
+                    ><Star size={14} /> {$t("testimonials.label")}</span
                 >
                 <h2 class="section-title">
-                    What Our Customers <span class="text-gradient">Say</span>
+                    {$t("testimonials.title.1")}
+                    <span class="text-gradient"
+                        >{$t("testimonials.title.2")}</span
+                    >
                 </h2>
                 <p class="section-desc">
-                    Real reviews from our happy customers
+                    {$t("testimonials.desc")}
                 </p>
             </div>
 
@@ -469,14 +480,14 @@
         <div class="container">
             <div class="section-header">
                 <span class="section-label"
-                    ><ChefHat size={14} /> Our Craft</span
+                    ><ChefHat size={14} /> {$t("craft.label")}</span
                 >
                 <h2 class="section-title">
-                    From Dough to <span class="text-gradient">Perfection</span>
+                    {$t("craft.title.1")}
+                    <span class="text-gradient">{$t("craft.title.2")}</span>
                 </h2>
                 <p class="section-desc">
-                    Every pizza is a masterpiece — handcrafted with the finest
-                    ingredients
+                    {$t("craft.desc")}
                 </p>
             </div>
 
@@ -583,22 +594,12 @@
             </div>
 
             <div class="prep-stats">
-                <div class="stat-item">
-                    <span class="stat-number">48h</span>
-                    <span class="stat-label">Dough Fermentation</span>
-                </div>
-                <div class="stat-item">
-                    <span class="stat-number">450°C</span>
-                    <span class="stat-label">Oven Temperature</span>
-                </div>
-                <div class="stat-item">
-                    <span class="stat-number">10min</span>
-                    <span class="stat-label">Cooking Time</span>
-                </div>
-                <div class="stat-item">
-                    <span class="stat-number">100%</span>
-                    <span class="stat-label">Fresh Ingredients</span>
-                </div>
+                {#each craftStats as s}
+                    <div class="stat-item">
+                        <span class="stat-number">{s.number}</span>
+                        <span class="stat-label">{$t(s.labelKey)}</span>
+                    </div>
+                {/each}
             </div>
         </div>
     </section>
@@ -610,13 +611,14 @@
         <div class="container">
             <div class="section-header">
                 <span class="section-label"
-                    ><Award size={14} /> Our Pizzeria</span
+                    ><Award size={14} /> {$t("gallery.label")}</span
                 >
                 <h2 class="section-title">
-                    Experience the <span class="text-gradient">Ambiance</span>
+                    {$t("gallery.title.1")}
+                    <span class="text-gradient">{$t("gallery.title.2")}</span>
                 </h2>
                 <p class="section-desc">
-                    A warm, welcoming space where great food meets great moments
+                    {$t("gallery.desc")}
                 </p>
             </div>
 
@@ -672,7 +674,9 @@
                         {#if isLast && remaining > 0}
                             <div class="more-overlay">
                                 <span class="more-count">+{remaining}</span>
-                                <span class="more-label">View All</span>
+                                <span class="more-label"
+                                    >{$t("craft.view_all")}</span
+                                >
                             </div>
                         {:else}
                             <div class="gallery-overlay">
@@ -686,9 +690,11 @@
             <!-- Virtual Tour -->
             <div class="virtual-tour">
                 <div class="virtual-tour-header">
-                    <span class="virtual-tour-badge">📍 360° Virtual Tour</span>
+                    <span class="virtual-tour-badge"
+                        >{$t("gallery.virtual_tour")}</span
+                    >
                     <p class="virtual-tour-desc">
-                        Explore our pizzeria from the comfort of your home
+                        {$t("gallery.virtual_tour.desc")}
                     </p>
                 </div>
                 <div class="virtual-tour-frame">
@@ -709,7 +715,7 @@
                     rel="noopener noreferrer"
                     class="virtual-tour-link"
                 >
-                    Open full experience in Google Maps →
+                    {$t("gallery.virtual_tour.link")}
                 </a>
             </div>
         </div>
@@ -723,16 +729,15 @@
             <div class="events-content">
                 <div class="section-header">
                     <span class="section-label"
-                        ><PartyPopper size={14} /> Events</span
+                        ><PartyPopper size={14} /> {$t("events.label")}</span
                     >
                     <h2 class="section-title">
-                        Host Your Next Event <span class="text-gradient"
-                            >With Us</span
+                        {$t("events.title.1")}
+                        <span class="text-gradient">{$t("events.title.2")}</span
                         >
                     </h2>
                     <p class="section-desc">
-                        From intimate gatherings to large celebrations — we've
-                        got you covered
+                        {$t("events.desc")}
                     </p>
                 </div>
 
@@ -742,8 +747,8 @@
                             <div class="event-card-icon">
                                 <event.icon size={24} />
                             </div>
-                            <h3>{event.title}</h3>
-                            <p>{event.desc}</p>
+                            <h3>{$t(event.titleKey)}</h3>
+                            <p>{$t(event.descKey)}</p>
                         </div>
                     {/each}
                 </div>
@@ -752,7 +757,7 @@
                     <div class="events-phone">
                         <Phone size={24} />
                         <div>
-                            <span class="phone-label">Call us to book</span>
+                            <span class="phone-label">{$t("events.call")}</span>
                             <a
                                 href="tel:{$settings?.phone ||
                                     CONTACT_INFO.phone}"
@@ -768,7 +773,7 @@
                             class="btn btn-primary btn-lg"
                         >
                             <Phone size={18} />
-                            Book an Event
+                            {$t("events.book_btn")}
                         </a>
                         <a
                             href="https://wa.me/{(
@@ -778,7 +783,7 @@
                             class="btn btn-outline btn-lg"
                         >
                             <Mail size={18} />
-                            WhatsApp Us
+                            {$t("events.whatsapp_btn")}
                         </a>
                     </div>
                 </div>

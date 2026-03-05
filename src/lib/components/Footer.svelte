@@ -2,6 +2,7 @@
     import { Instagram, Facebook, Twitter } from "lucide-svelte";
     import { APP_TAGLINE } from "$lib/constants";
     import { settings } from "$lib/stores/settings";
+    import { t } from "$lib/stores/language";
 </script>
 
 <footer class="footer">
@@ -21,8 +22,7 @@
                 {/if}
             </div>
             <p class="footer-desc">
-                {APP_TAGLINE}. Experience the finest flavors crafted by our
-                passionate chefs.
+                {APP_TAGLINE}{$t("footer.desc")}
             </p>
             <div class="footer-socials">
                 <a
@@ -49,24 +49,24 @@
             </div>
         </div>
         <div class="footer-links">
-            <h4>Quick Links</h4>
+            <h4>{$t("footer.links.title")}</h4>
             <ul>
-                <li><a href="/menu">Menu</a></li>
-                <li><a href="/offers">Offers</a></li>
-                <li><a href="/order">Track Order</a></li>
-                <li><a href="/#events">Book an Event</a></li>
+                <li><a href="/menu">{$t("footer.links.menu")}</a></li>
+                <li><a href="/offers">{$t("footer.links.offers")}</a></li>
+                <li><a href="/order">{$t("footer.links.track")}</a></li>
+                <li><a href="/#events">{$t("footer.links.book")}</a></li>
             </ul>
         </div>
         <div class="footer-links">
-            <h4>Order</h4>
+            <h4>{$t("footer.order.title")}</h4>
             <ul>
-                <li><a href="/menu">Delivery</a></li>
-                <li><a href="/menu">Takeaway</a></li>
-                <li><a href="/menu">Dine-in</a></li>
+                <li><a href="/menu">{$t("footer.order.delivery")}</a></li>
+                <li><a href="/menu">{$t("footer.order.takeaway")}</a></li>
+                <li><a href="/menu">{$t("footer.order.dine_in")}</a></li>
             </ul>
         </div>
         <div class="footer-links">
-            <h4>Contact</h4>
+            <h4>{$t("footer.contact.title")}</h4>
             <ul>
                 {#if $settings?.phone}
                     <li>
@@ -89,7 +89,7 @@
     <div class="footer-bottom">
         <p>
             © {new Date().getFullYear()}
-            {$settings?.restaurant_name || "Pizza Mania"}. All rights reserved.
+            {$settings?.restaurant_name || "Pizza Mania"}. {$t("footer.rights")}
         </p>
         <p>
             {$settings?.address || ""}

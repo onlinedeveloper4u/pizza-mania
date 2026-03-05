@@ -1,5 +1,6 @@
 <script lang="ts">
     import { goto } from "$app/navigation";
+    import { get } from "svelte/store";
     import {
         Truck,
         Store,
@@ -19,6 +20,7 @@
         CreateOrderPayload,
     } from "$lib/types";
     import { toast } from "svelte-sonner";
+    import { t } from "$lib/stores/language";
 
     let cartState = $state(cart.getState());
     let currentItemCount = $state(0);
@@ -69,11 +71,14 @@
 
     function validate(): boolean {
         const newErrors: Record<string, string> = {};
-        if (!customerName.trim()) newErrors.name = "Name is required";
-        if (!customerPhone.trim()) newErrors.phone = "Phone number is required";
-        if (!customerEmail.trim()) newErrors.email = "Email is required";
+        const tFn = get(t);
+        if (!customerName.trim()) newErrors.name = tFn("checkout.error.name");
+        if (!customerPhone.trim())
+            newErrors.phone = tFn("checkout.error.phone");
+        if (!customerEmail.trim())
+            newErrors.email = tFn("checkout.error.email");
         if (orderType === "delivery" && !deliveryAddress.trim())
-            newErrors.address = "Delivery address is required";
+            newErrors.address = tFn("checkout.error.address");
         errors = newErrors;
         return Object.keys(newErrors).length === 0;
     }
@@ -155,42 +160,45 @@
 </script>
 
 <svelte:head>
-    <title>Checkout — {$settings?.restaurant_name || "Pizza Mania"}</title>
+    <title
+        >{$t("checkout.title")} — {$settings?.restaurant_name ||
+            "Pizza Mania"}</title
+    >
 </svelte:head>
 
 {#if currentItemCount > 0}
     <div class="checkout-page">
-        <div class="checkout-header"><h1>Checkout</h1></div>
+        <div class="checkout-header"><h1>{$t("checkout.title")}</h1></div>
 
         <div class="checkout-layout">
             <div>
                 <!-- Order Type -->
                 <!-- Order Type (Read Only) -->
                 <div class="form-section">
-                    <h2>Order Type</h2>
+                    <h2>{$t("checkout.order_type")}</h2>
                     <div class={cn("order-type-card active", "read-only")}>
                         {#if orderType === "delivery"}
                             <Truck size={28} color="var(--color-info)" />
-                            <h3>Home Delivery</h3>
-                            <p>We'll deliver to your door</p>
+                            <h3>{$t("checkout.delivery")}</h3>
+                            <p>{$t("checkout.delivery.desc")}</p>
                         {:else if orderType === "pickup"}
                             <Store size={28} color="var(--color-success)" />
-                            <h3>Self Pickup</h3>
-                            <p>Pick up at the restaurant</p>
+                            <h3>{$t("checkout.pickup")}</h3>
+                            <p>{$t("checkout.pickup.desc")}</p>
                         {:else}
                             <UtensilsCrossed
                                 size={28}
                                 color="var(--color-accent)"
                             />
-                            <h3>Dine In</h3>
+                            <h3>{$t("checkout.dine_in")}</h3>
                             <p>Table #{cartState.tableNumber}</p>
                         {/if}
                     </div>
                     <div class="change-order-type">
                         <p>
-                            Want to change? <a
-                                href="/"
-                                onclick={() => cart.clearCart()}>Start over</a
+                            {$t("checkout.want_change")}
+                            <a href="/" onclick={() => cart.clearCart()}
+                                >{$t("checkout.start_over")}</a
                             >
                         </p>
                     </div>
@@ -198,14 +206,14 @@
 
                 <!-- Customer Details -->
                 <div class="form-section">
-                    <h2>Your Details</h2>
+                    <h2>{$t("checkout.your_details")}</h2>
                     <div class="form-grid">
                         <div class="field">
-                            <label class="label">Name *</label>
+                            <label class="label">{$t("checkout.name")}</label>
                             <input
                                 type="text"
                                 class="input"
-                                placeholder="Your full name"
+                                placeholder={$t("checkout.name.placeholder")}
                                 bind:value={customerName}
                             />
                             {#if errors.name}<p class="error-msg">
@@ -213,7 +221,7 @@
                                 </p>{/if}
                         </div>
                         <div class="field">
-                            <label class="label">Phone *</label>
+                            <label class="label">{$t("checkout.phone")}</label>
                             <input
                                 type="tel"
                                 class="input"
@@ -225,11 +233,11 @@
                                 </p>{/if}
                         </div>
                         <div class="field form-full">
-                            <label class="label">Email *</label>
+                            <label class="label">{$t("checkout.email")}</label>
                             <input
                                 type="email"
                                 class="input"
-                                placeholder="your@email.com (for order updates)"
+                                placeholder={$t("checkout.email.placeholder")}
                                 bind:value={customerEmail}
                             />
                             {#if errors.email}<p class="error-msg">
@@ -238,11 +246,15 @@
                         </div>
                         {#if orderType === "delivery"}
                             <div class="field form-full">
-                                <label class="label">Delivery Address *</label>
+                                <label class="label"
+                                    >{$t("checkout.address")}</label
+                                >
                                 <AddressAutocomplete
                                     disabled={true}
                                     bind:value={deliveryAddress}
-                                    placeholder="Street address, apartment, city, postal code"
+                                    placeholder={$t(
+                                        "checkout.address.placeholder",
+                                    )}
                                 />
                                 {#if errors.address}<p class="error-msg">
                                         {errors.address}
@@ -254,7 +266,7 @@
 
                 <!-- Payment Method -->
                 <div class="form-section">
-                    <h2>Payment Method</h2>
+                    <h2>{$t("checkout.payment")}</h2>
                     <div class="payment-options">
                         <div
                             class={cn(
@@ -269,8 +281,8 @@
                         >
                             <CreditCard size={24} color="var(--color-info)" />
                             <div>
-                                <h4>Pay Online</h4>
-                                <p>Secure card payment</p>
+                                <h4>{$t("checkout.pay_online")}</h4>
+                                <p>{$t("checkout.pay_online.desc")}</p>
                             </div>
                         </div>
                         <div
@@ -292,11 +304,11 @@
                             <Banknote size={24} color="var(--color-success)" />
                             <div>
                                 <h4>
-                                    Pay at {orderType === "dine_in"
-                                        ? "Table"
-                                        : "Counter"}
+                                    {orderType === "dine_in"
+                                        ? $t("checkout.pay_counter_table")
+                                        : $t("checkout.pay_counter_counter")}
                                 </h4>
-                                <p>Cash or card at location</p>
+                                <p>{$t("checkout.pay_counter.desc")}</p>
                             </div>
                         </div>
                     </div>
@@ -304,17 +316,17 @@
                         <p
                             style="font-size: var(--text-xs); color: var(--color-text-muted); margin-top: var(--space-3);"
                         >
-                            Online payment is required for delivery orders
+                            {$t("checkout.online_required")}
                         </p>
                     {/if}
                 </div>
 
                 <!-- Special Instructions -->
                 <div class="form-section">
-                    <h2>Special Instructions</h2>
+                    <h2>{$t("checkout.instructions")}</h2>
                     <textarea
                         class="input"
-                        placeholder="Any special requests for the kitchen?"
+                        placeholder={$t("checkout.instructions.placeholder")}
                         bind:value={specialInstructions}
                         rows="3"
                     ></textarea>
@@ -323,7 +335,7 @@
 
             <!-- Order Summary -->
             <div class="checkout-summary">
-                <h2>Order Summary</h2>
+                <h2>{$t("checkout.summary")}</h2>
                 <div class="summary-items">
                     {#each cartState.items as item (item.id)}
                         <div class="summary-item">
@@ -337,17 +349,17 @@
                     {/each}
                 </div>
                 <div class="summary-row">
-                    <span>Subtotal</span>
+                    <span>{$t("checkout.subtotal")}</span>
                     <span>{formatPrice(currentSubtotal)}</span>
                 </div>
                 {#if orderType === "delivery"}
                     <div class="summary-row">
-                        <span>Delivery Fee</span>
+                        <span>{$t("checkout.delivery_fee")}</span>
                         <span>{formatPrice(deliveryFee)}</span>
                     </div>
                 {/if}
                 <div class="summary-total">
-                    <span>Total</span>
+                    <span>{$t("checkout.total")}</span>
                     <span>{formatPrice(total)}</span>
                 </div>
                 <button
@@ -360,12 +372,12 @@
                 >
                     {#if loading}
                         <Loader2 size={18} class="animate-spin" />
-                        Processing...
+                        {$t("checkout.processing")}
                     {:else if paymentMethod === "online"}
                         <CreditCard size={18} />
                         Pay {formatPrice(total)}
                     {:else}
-                        Place Order — {formatPrice(total)}
+                        {$t("checkout.place_order")} — {formatPrice(total)}
                     {/if}
                 </button>
             </div>

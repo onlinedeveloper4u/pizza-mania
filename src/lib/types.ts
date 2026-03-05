@@ -14,7 +14,7 @@ export type OrderStatus =
     | 'served'
     | 'cancelled';
 export type PaymentMethod = 'online' | 'counter';
-export type PaymentStatus = 'pending' | 'paid' | 'failed';
+export type PaymentStatus = 'pending' | 'paid' | 'failed' | 'refunded';
 export type UserRole = 'manager' | 'chef';
 
 // ============================================================

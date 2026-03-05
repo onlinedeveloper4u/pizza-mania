@@ -11,6 +11,7 @@
     import { cart } from "$lib/stores/cart";
     import { formatPrice } from "$lib/utils";
     import { DELIVERY_FEE } from "$lib/constants";
+    import { t } from "$lib/stores/language";
 
     let items: typeof $state.snapshot extends never ? never : any[] = $state(
         [],
@@ -33,23 +34,28 @@
 </script>
 
 <svelte:head>
-    <title>Cart — {$settings?.restaurant_name || "Pizza Mania"}</title>
+    <title
+        >{$t("cart.title")} — {$settings?.restaurant_name ||
+            "Pizza Mania"}</title
+    >
 </svelte:head>
 
 <div class="cart-page">
     {#if currentItemCount === 0}
         <div class="empty-cart">
             <ShoppingBag size={64} color="var(--color-text-muted)" />
-            <h2>Your cart is empty</h2>
-            <p>Looks like you haven't added any items yet.</p>
-            <a href="/menu" class="btn btn-primary btn-lg">Browse Menu</a>
+            <h2>{$t("cart.empty.title")}</h2>
+            <p>{$t("cart.empty.subtitle")}</p>
+            <a href="/menu" class="btn btn-primary btn-lg"
+                >{$t("cart.empty.browse")}</a
+            >
         </div>
     {:else}
         <div class="cart-header">
-            <h1>Your Cart</h1>
+            <h1>{$t("cart.title")}</h1>
             <p>
-                {currentItemCount} item{currentItemCount > 1 ? "s" : ""} in your
-                cart
+                {currentItemCount}
+                {$t("cart.items")}
             </p>
         </div>
 
@@ -89,7 +95,8 @@
                             {/if}
                             {#if item.notes}
                                 <div class="cart-item-notes">
-                                    Note: {item.notes}
+                                    {$t("cart.note")}
+                                    {item.notes}
                                 </div>
                             {/if}
                             <div class="cart-item-actions">
@@ -138,27 +145,27 @@
 
             <!-- Order Summary -->
             <div class="order-summary">
-                <h2>Order Summary</h2>
+                <h2>{$t("cart.summary")}</h2>
                 <div class="summary-row">
-                    <span>Subtotal</span>
+                    <span>{$t("cart.subtotal")}</span>
                     <span>{formatPrice(currentSubtotal)}</span>
                 </div>
                 {#if orderType === "delivery"}
                     <div class="summary-row">
-                        <span>Delivery Fee</span>
+                        <span>{$t("cart.delivery_fee")}</span>
                         <span>{formatPrice(deliveryFee)}</span>
                     </div>
                 {/if}
                 <div class="summary-total">
-                    <span>Total</span>
+                    <span>{$t("cart.total")}</span>
                     <span>{formatPrice(total)}</span>
                 </div>
                 <a href="/checkout" class="btn btn-primary btn-lg checkout-btn">
-                    Proceed to Checkout
+                    {$t("cart.checkout")}
                     <ArrowRight size={18} />
                 </a>
                 <a href="/menu" class="btn btn-ghost continue-shopping-btn">
-                    Continue Shopping
+                    {$t("cart.continue")}
                 </a>
             </div>
         </div>

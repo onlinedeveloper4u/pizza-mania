@@ -4,6 +4,7 @@ import { createClient as createServerClient } from '$lib/supabase/server';
 import { createAdminClient } from '$lib/supabase/admin';
 import type { OrderStatus, OrderWithItems } from '$lib/types';
 import { sendOrderStatusEmail } from '$lib/server/email';
+import { stripe } from '$lib/stripe.server';
 
 export const PATCH: RequestHandler = async ({ request, params, cookies, url }) => {
     const { id } = params;
@@ -35,10 +36,10 @@ export const PATCH: RequestHandler = async ({ request, params, cookies, url }) =
 
         const adminSupabase = createAdminClient();
 
-        // 0. Fetch previous status to detect transitions
+        // 0. Fetch full previous order to detect transitions
         const { data: oldOrder } = await adminSupabase
             .from('orders')
-            .select('status')
+            .select('*')
             .eq('id', id)
             .single();
 
@@ -48,6 +49,28 @@ export const PATCH: RequestHandler = async ({ request, params, cookies, url }) =
         const updateData: Record<string, unknown> = { status: newStatus as OrderStatus };
         if (isTerminalStatus) {
             updateData.payment_status = 'paid';
+        }
+
+        // If cancelling an online-paid order → issue Stripe refund
+        if (
+            newStatus === 'cancelled' &&
+            oldOrder?.payment_method === 'online' &&
+            oldOrder?.payment_status === 'paid' &&
+            oldOrder?.stripe_session_id
+        ) {
+            try {
+                const stripeSession = await stripe.checkout.sessions.retrieve(oldOrder.stripe_session_id);
+                if (stripeSession.payment_intent) {
+                    await stripe.refunds.create({
+                        payment_intent: stripeSession.payment_intent as string,
+                    });
+                    updateData.payment_status = 'refunded';
+                    console.log(`Refund issued for order ${id} (Stripe session: ${oldOrder.stripe_session_id})`);
+                }
+            } catch (refundError) {
+                console.error('Stripe refund error:', refundError);
+                // Don't block the status update — log the error but continue
+            }
         }
 
         // 1. Update the order

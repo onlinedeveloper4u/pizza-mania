@@ -4,6 +4,7 @@
     import { cart } from "$lib/stores/cart";
     import { cn } from "$lib/utils";
     import { settings } from "$lib/stores/settings";
+    import { language } from "$lib/stores/language";
 
     let scrolled = $state(false);
 
@@ -50,8 +51,20 @@
             </a>
         </div>
 
-        <!-- Right: Cart + Menu Toggle -->
+        <!-- Right: Language Toggle + Cart + Offers -->
         <div class="header-right">
+            <button
+                class="lang-toggle"
+                onclick={() => language.toggle()}
+                aria-label="Toggle language"
+                title={$language === "fr"
+                    ? "Switch to English"
+                    : "Passer en français"}
+            >
+                <span class={$language === "fr" ? "lang-active" : ""}>FR</span>
+                <span class="lang-sep">|</span>
+                <span class={$language === "en" ? "lang-active" : ""}>EN</span>
+            </button>
             <a href="/offers" class="nav-btn" aria-label="Offers">
                 <Ticket size={20} />
             </a>
@@ -68,7 +81,9 @@
 {#if currentIsDineIn}
     <div class="dine-in-banner">
         <UtensilsCrossed size={14} />
-        Table #{currentTableNumber} — Dine-in
+        Table #{currentTableNumber} — {$language === "fr"
+            ? "Sur place"
+            : "Dine-in"}
     </div>
 {/if}
 
@@ -250,5 +265,36 @@
 
     .hidden {
         opacity: 0;
+    }
+
+    .lang-toggle {
+        display: flex;
+        align-items: center;
+        gap: 3px;
+        padding: 4px 8px;
+        border-radius: var(--radius-full);
+        border: 1px solid var(--color-border);
+        background: transparent;
+        color: var(--color-text-muted);
+        font-size: 11px;
+        font-weight: var(--weight-semibold);
+        letter-spacing: 0.05em;
+        cursor: pointer;
+        transition: all var(--transition-fast);
+        -webkit-tap-highlight-color: transparent;
+    }
+
+    .lang-toggle:hover {
+        border-color: var(--color-border-hover);
+        color: var(--color-text-primary);
+    }
+
+    .lang-active {
+        color: var(--color-primary);
+    }
+
+    .lang-sep {
+        color: var(--color-border);
+        font-weight: var(--weight-light);
     }
 </style>

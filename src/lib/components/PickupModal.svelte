@@ -3,6 +3,7 @@
     import { cn } from "$lib/utils";
     import { fade, scale, slide } from "svelte/transition";
     import { settings } from "$lib/stores/settings";
+    import { t } from "$lib/stores/language";
 
     let { show = $bindable(false), onConfirm } = $props();
 
@@ -65,7 +66,7 @@
             onkeydown={(e) => e.key === "Escape" && (show = false)}
         >
             <header class="modal-header">
-                <h2>Confirm Pickup Info</h2>
+                <h2>{$t("pickup.title")}</h2>
                 <button
                     class="close-btn"
                     onclick={() => (show = false)}
@@ -91,7 +92,7 @@
 
                 <!-- Schedule Section -->
                 <div class="form-section time-section">
-                    <h3 class="section-title">Schedule Order</h3>
+                    <h3 class="section-title">{$t("pickup.schedule")}</h3>
 
                     <div class="time-radio-group">
                         <label
@@ -108,7 +109,9 @@
                             />
                             <div class="custom-radio"></div>
                             <div class="time-card-content">
-                                <span class="time-primary">Pickup Now</span>
+                                <span class="time-primary"
+                                    >{$t("pickup.now")}</span
+                                >
                             </div>
                         </label>
 
@@ -126,7 +129,9 @@
                             />
                             <div class="custom-radio"></div>
                             <div class="time-card-content">
-                                <span class="time-primary">Pickup Later</span>
+                                <span class="time-primary"
+                                    >{$t("pickup.later")}</span
+                                >
                             </div>
                         </label>
                     </div>
@@ -165,7 +170,7 @@
 
             <footer class="modal-footer">
                 <button class="confirm-order-btn" onclick={handleStartOrder}>
-                    <span>START ORDER</span>
+                    <span>{$t("pickup.start_order")}</span>
                 </button>
             </footer>
         </div>

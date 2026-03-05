@@ -16,6 +16,7 @@
     import { env } from "$env/dynamic/public";
     import { settings } from "$lib/stores/settings";
     import { STORE_COORDINATES } from "$lib/constants";
+    import { t } from "$lib/stores/language";
 
     let { show = $bindable(false), onConfirm } = $props();
 
@@ -370,7 +371,7 @@
             tabindex="-1"
         >
             <header class="modal-header">
-                <h2>Confirm Your Location</h2>
+                <h2>{$t("location.title")}</h2>
                 <button
                     class="close-btn"
                     onclick={() => close()}
@@ -384,7 +385,7 @@
                 <!-- Address Section -->
                 <div class="form-section">
                     <label class="input-label" for="address-input"
-                        >Enter Delivery Address</label
+                        >{$t("location.address.label")}</label
                     >
                     <div class="search-wrapper">
                         <div class="input-container">
@@ -392,7 +393,7 @@
                                 id="address-input"
                                 type="text"
                                 class="main-address-input"
-                                placeholder="Street, number, area..."
+                                placeholder={$t("location.address.placeholder")}
                                 value={searchInput}
                                 oninput={handleInput}
                                 onfocus={() => (showResults = true)}
@@ -494,12 +495,13 @@
 
                     <div class="map-info-footer">
                         <div class="map-store-badge">
-                            STORE: {$settings?.restaurant_name?.toUpperCase() ||
+                            {$t("location.store")}
+                            {$settings?.restaurant_name?.toUpperCase() ||
                                 "JUMET CENTRE"}
                         </div>
                         <div class="map-footer-hint">
                             <Navigation size={14} />
-                            <span>Drag the pin to adjust</span>
+                            <span>{$t("location.drag_hint")}</span>
                         </div>
                     </div>
                 </div>
@@ -508,7 +510,9 @@
                     <div class="selected-address-box">
                         <MapPin size={20} class="selected-icon" />
                         <div class="selected-details">
-                            <span class="selected-title">Delivery Address</span>
+                            <span class="selected-title"
+                                >{$t("location.selected_title")}</span
+                            >
                             <span class="selected-text">{address}</span>
                         </div>
                     </div>
@@ -516,7 +520,7 @@
 
                 <!-- Delivery Option Section -->
                 <div class="form-section time-section">
-                    <h3 class="section-title">Schedule Order</h3>
+                    <h3 class="section-title">{$t("location.schedule")}</h3>
 
                     <div class="time-radio-group">
                         <label
@@ -533,7 +537,9 @@
                             />
                             <div class="custom-radio"></div>
                             <div class="time-card-content">
-                                <span class="time-primary">Deliver Now</span>
+                                <span class="time-primary"
+                                    >{$t("location.deliver_now")}</span
+                                >
                             </div>
                         </label>
 
@@ -551,7 +557,9 @@
                             />
                             <div class="custom-radio"></div>
                             <div class="time-card-content">
-                                <span class="time-primary">Deliver Later</span>
+                                <span class="time-primary"
+                                    >{$t("location.deliver_later")}</span
+                                >
                             </div>
                         </label>
                     </div>
@@ -591,9 +599,10 @@
             <footer class="modal-footer">
                 {#if deliveryDistance !== null && deliveryDistance > 10}
                     <div class="distance-error">
-                        Delivery unavailable: Location is {deliveryDistance.toFixed(
-                            1,
-                        )}km away (max 10km).
+                        {$t("location.out_of_range").replace(
+                            "{n}",
+                            deliveryDistance.toFixed(1),
+                        )}
                     </div>
                 {:else}
                     <button
@@ -601,7 +610,7 @@
                         onclick={handleStartOrder}
                         disabled={!address.trim()}
                     >
-                        <span>START ORDER</span>
+                        <span>{$t("location.start_order")}</span>
                     </button>
                 {/if}
             </footer>

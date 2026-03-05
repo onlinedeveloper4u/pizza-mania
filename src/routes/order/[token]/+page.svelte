@@ -1,13 +1,24 @@
 <script lang="ts">
-    import { onMount, onDestroy } from 'svelte';
-    import { page } from '$app/stores';
-    import { Package, Clock, CheckCircle, ChefHat, Truck, Search, XCircle, UtensilsCrossed, Loader2 } from 'lucide-svelte';
-    import { createClient } from '$lib/supabase/client';
-    import { settings } from '$lib/stores/settings';
-    import { cart } from '$lib/stores/cart';
-    import type { OrderWithItems, OrderStatus } from '$lib/types';
-    import { ORDER_STATUS_LABELS } from '$lib/constants';
-    import { formatPrice, formatDateTime, timeAgo } from '$lib/utils';
+    import { onMount, onDestroy } from "svelte";
+    import { page } from "$app/stores";
+    import {
+        Package,
+        Clock,
+        CheckCircle,
+        ChefHat,
+        Truck,
+        Search,
+        XCircle,
+        UtensilsCrossed,
+        Loader2,
+    } from "lucide-svelte";
+    import { createClient } from "$lib/supabase/client";
+    import { settings } from "$lib/stores/settings";
+    import { cart } from "$lib/stores/cart";
+    import type { OrderWithItems, OrderStatus } from "$lib/types";
+    import { ORDER_STATUS_LABELS } from "$lib/constants";
+    import { formatPrice, formatDateTime, timeAgo } from "$lib/utils";
+    import { t } from "$lib/stores/language";
 
     let token = $derived($page.params.token);
     let order: OrderWithItems | null = $state(null);
@@ -15,7 +26,12 @@
     let error = $state(false);
     let subscription: any = null;
 
-    const statusFlow: OrderStatus[] = ['new', 'confirmed', 'preparing', 'ready'];
+    const statusFlow: OrderStatus[] = [
+        "new",
+        "confirmed",
+        "preparing",
+        "ready",
+    ];
     const statusIcons: Record<string, any> = {
         new: Package,
         confirmed: CheckCircle,
@@ -29,29 +45,29 @@
     };
 
     const statusColors: Record<string, string> = {
-        new: 'var(--color-info)',
-        confirmed: 'var(--color-amber)',
-        preparing: 'var(--color-accent)',
-        ready: 'var(--color-success)',
-        out_for_delivery: 'var(--color-gold)',
-        delivered: 'var(--color-success)',
-        picked_up: 'var(--color-success)',
-        served: 'var(--color-success)',
-        cancelled: 'var(--color-danger)',
+        new: "var(--color-info)",
+        confirmed: "var(--color-amber)",
+        preparing: "var(--color-accent)",
+        ready: "var(--color-success)",
+        out_for_delivery: "var(--color-gold)",
+        delivered: "var(--color-success)",
+        picked_up: "var(--color-success)",
+        served: "var(--color-success)",
+        cancelled: "var(--color-danger)",
     };
 
     onMount(async () => {
         // Clear cart if returning from successful payment
-        const paymentStatus = $page.url.searchParams.get('payment');
-        if (paymentStatus === 'success') {
+        const paymentStatus = $page.url.searchParams.get("payment");
+        if (paymentStatus === "success") {
             cart.clearCart();
         }
 
         const supabase = createClient();
         const { data, error: fetchError } = await supabase
-            .from('orders')
-            .select('*, order_items(*)')
-            .eq('tracking_token', token)
+            .from("orders")
+            .select("*, order_items(*)")
+            .eq("tracking_token", token)
             .single();
 
         if (fetchError || !data) {
@@ -65,16 +81,20 @@
         if (order) {
             subscription = supabase
                 .channel(`order-${order.id}`)
-                .on('postgres_changes', {
-                    event: 'UPDATE',
-                    schema: 'public',
-                    table: 'orders',
-                    filter: `id=eq.${order.id}`,
-                }, (payload: any) => {
-                    if (order) {
-                        order = { ...order, ...payload.new };
-                    }
-                })
+                .on(
+                    "postgres_changes",
+                    {
+                        event: "UPDATE",
+                        schema: "public",
+                        table: "orders",
+                        filter: `id=eq.${order.id}`,
+                    },
+                    (payload: any) => {
+                        if (order) {
+                            order = { ...order, ...payload.new };
+                        }
+                    },
+                )
                 .subscribe();
         }
     });
@@ -89,66 +109,110 @@
 </script>
 
 <svelte:head>
-    <title>Track Order — {$settings?.restaurant_name || 'Pizza Mania'}</title>
+    <title>Track Order — {$settings?.restaurant_name || "Pizza Mania"}</title>
 </svelte:head>
 
 <div class="tracking-page">
     {#if loading}
         <div class="centered">
-            <Loader2 size={48} class="animate-spin" color="var(--color-primary)" />
-            <p>Loading order details...</p>
+            <Loader2
+                size={48}
+                class="animate-spin"
+                color="var(--color-primary)"
+            />
+            <p>{$t("order.token.loading")}</p>
         </div>
     {:else if error || !order}
         <div class="centered">
             <Search size={64} color="var(--color-text-muted)" />
-            <h2>Order Not Found</h2>
-            <p>We couldn't find an order with this tracking token.</p>
-            <a href="/" class="btn btn-primary">Go Home</a>
+            <h2>{$t("order.token.not_found")}</h2>
+            <p>{$t("order.token.not_found.desc")}</p>
+            <a href="/" class="btn btn-primary">{$t("order.token.go_home")}</a>
         </div>
     {:else}
         <div class="tracking-header">
             <h1>Order {order.tracking_token}</h1>
-            <p>Placed {formatDateTime(order.created_at)} · {timeAgo(order.created_at)}</p>
+            <p>
+                {$t("order.token.placed")}
+                {formatDateTime(order.created_at)} · {timeAgo(order.created_at)}
+            </p>
         </div>
 
         <!-- Status Progress -->
         <div class="status-card glass">
             <div class="status-current">
-                <div class="status-icon" style="background: {statusColors[order.status]}20; color: {statusColors[order.status]};">
+                <div
+                    class="status-icon"
+                    style="background: {statusColors[
+                        order.status
+                    ]}20; color: {statusColors[order.status]};"
+                >
                     {#if statusIcons[order.status]}
-                        <svelte:component this={statusIcons[order.status]} size={32} />
+                        <svelte:component
+                            this={statusIcons[order.status]}
+                            size={32}
+                        />
                     {/if}
                 </div>
                 <div>
-                    <div class="status-label">{ORDER_STATUS_LABELS[order.status] || order.status}</div>
+                    <div class="status-label">
+                        {ORDER_STATUS_LABELS[order.status] || order.status}
+                    </div>
                     <div class="status-sub">
-                        {#if order.status === 'cancelled'}
-                            This order has been cancelled
+                        {#if order.status === "cancelled"}
+                            {$t("order.token.cancelled")}
                         {:else if order.scheduled_time}
-                            <span style="color:var(--color-warning);font-weight:var(--weight-bold);">
-                                Scheduled: {new Date(order.scheduled_time).toLocaleString('en-GB', { weekday: 'short', hour: '2-digit', minute: '2-digit' })}
+                            <span
+                                style="color:var(--color-warning);font-weight:var(--weight-bold);"
+                            >
+                                {$t("order.token.scheduled")}
+                                {new Date(order.scheduled_time).toLocaleString(
+                                    "fr-FR",
+                                    {
+                                        weekday: "short",
+                                        hour: "2-digit",
+                                        minute: "2-digit",
+                                    },
+                                )}
                             </span>
                         {:else if order.estimated_minutes}
-                            Estimated: ~{order.estimated_minutes} minutes
+                            {$t("order.token.estimated").replace(
+                                "{n}",
+                                String(order.estimated_minutes),
+                            )}
                         {:else}
-                            We're working on your order
+                            {$t("order.token.in_progress")}
                         {/if}
                     </div>
                 </div>
             </div>
 
-            {#if order.status !== 'cancelled'}
+            {#if order.status !== "cancelled"}
                 <div class="status-steps">
                     {#each statusFlow as step, i}
                         {@const currentIndex = getStatusIndex(order.status)}
                         {@const isComplete = i <= currentIndex}
                         {@const isCurrent = i === currentIndex}
-                        <div class="status-step" class:complete={isComplete} class:current={isCurrent}>
-                            <div class="step-dot" style={isComplete ? `background: ${statusColors[step]}` : ''}></div>
+                        <div
+                            class="status-step"
+                            class:complete={isComplete}
+                            class:current={isCurrent}
+                        >
+                            <div
+                                class="step-dot"
+                                style={isComplete
+                                    ? `background: ${statusColors[step]}`
+                                    : ""}
+                            ></div>
                             {#if i < statusFlow.length - 1}
-                                <div class="step-line" class:complete={i < currentIndex}></div>
+                                <div
+                                    class="step-line"
+                                    class:complete={i < currentIndex}
+                                ></div>
                             {/if}
-                            <div class="step-label">{ORDER_STATUS_LABELS[step]}</div>
+                            <div class="step-label">
+                                {ORDER_STATUS_LABELS[step]}
+                            </div>
                         </div>
                     {/each}
                 </div>
@@ -158,33 +222,43 @@
         <!-- Order Details -->
         <div class="details-grid">
             <div class="detail-card glass">
-                <h3>Order Details</h3>
+                <h3>{$t("order.token.details")}</h3>
                 <div class="detail-row">
-                    <span>Order Type</span>
-                    <span class="badge badge-{order.order_type}">{order.order_type.replace('_', ' ')}</span>
+                    <span>{$t("order.token.order_type")}</span>
+                    <span class="badge badge-{order.order_type}"
+                        >{order.order_type.replace("_", " ")}</span
+                    >
                 </div>
                 <div class="detail-row">
-                    <span>Payment</span>
-                    <span>{order.payment_method === 'online' ? 'Online' : 'At Counter'} — {order.payment_status}</span>
+                    <span>{$t("order.token.payment")}</span>
+                    <span
+                        >{order.payment_method === "online"
+                            ? $t("order.token.payment.online")
+                            : $t("order.token.payment.counter")} — {order.payment_status}</span
+                    >
                 </div>
                 {#if order.delivery_address}
                     <div class="detail-row">
-                        <span>Delivery to</span>
+                        <span>{$t("order.token.delivery_to")}</span>
                         <span>{order.delivery_address}</span>
                     </div>
                 {/if}
             </div>
 
             <div class="detail-card glass">
-                <h3>Items</h3>
+                <h3>{$t("order.token.items")}</h3>
                 {#each order.order_items as item}
                     <div class="detail-row">
                         <span>{item.quantity}× {item.item_name}</span>
-                        <span>{formatPrice(item.item_price * item.quantity)}</span>
+                        <span
+                            >{formatPrice(
+                                item.item_price * item.quantity,
+                            )}</span
+                        >
                     </div>
                 {/each}
                 <div class="detail-total">
-                    <span>Total</span>
+                    <span>{$t("order.token.total")}</span>
                     <span>{formatPrice(order.total)}</span>
                 </div>
             </div>
@@ -211,17 +285,26 @@
         text-align: center;
     }
 
-    .centered h2 { font-size: var(--text-2xl); font-weight: var(--weight-bold); }
-    .centered p { color: var(--color-text-secondary); }
+    .centered h2 {
+        font-size: var(--text-2xl);
+        font-weight: var(--weight-bold);
+    }
+    .centered p {
+        color: var(--color-text-secondary);
+    }
 
-    .tracking-header { margin-bottom: var(--space-8); }
+    .tracking-header {
+        margin-bottom: var(--space-8);
+    }
     .tracking-header h1 {
         font-family: var(--font-display);
         font-size: var(--text-3xl);
         font-weight: var(--weight-bold);
         margin-bottom: var(--space-2);
     }
-    .tracking-header p { color: var(--color-text-secondary); }
+    .tracking-header p {
+        color: var(--color-text-secondary);
+    }
 
     .status-card {
         padding: var(--space-8);
@@ -277,8 +360,12 @@
         z-index: 1;
     }
 
-    .status-step.complete .step-dot { border-color: transparent; }
-    .status-step.current .step-dot { box-shadow: 0 0 0 4px rgba(230, 57, 70, 0.3); }
+    .status-step.complete .step-dot {
+        border-color: transparent;
+    }
+    .status-step.current .step-dot {
+        box-shadow: 0 0 0 4px rgba(230, 57, 70, 0.3);
+    }
 
     .step-line {
         position: absolute;
@@ -289,7 +376,9 @@
         background: var(--color-border);
     }
 
-    .step-line.complete { background: var(--color-success); }
+    .step-line.complete {
+        background: var(--color-success);
+    }
 
     .step-label {
         font-size: var(--text-xs);
@@ -304,7 +393,9 @@
         gap: var(--space-6);
     }
 
-    .detail-card { padding: var(--space-6); }
+    .detail-card {
+        padding: var(--space-6);
+    }
 
     .detail-card h3 {
         font-size: var(--text-lg);
@@ -331,7 +422,11 @@
     }
 
     @media (max-width: 768px) {
-        .details-grid { grid-template-columns: 1fr; }
-        .status-steps { gap: var(--space-1); }
+        .details-grid {
+            grid-template-columns: 1fr;
+        }
+        .status-steps {
+            gap: var(--space-1);
+        }
     }
 </style>
