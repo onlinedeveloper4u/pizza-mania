@@ -26,6 +26,17 @@
     let error = $state(false);
     let subscription: any = null;
 
+    // Cancellation state
+    let showCancelModal = $state(false);
+    let cancelling = $state(false);
+    let cancelError = $state("");
+
+    const cancellableStatuses: OrderStatus[] = ["new", "confirmed"];
+    let canCancel = $derived(
+        order !== null &&
+            cancellableStatuses.includes(order.status as OrderStatus),
+    );
+
     const statusFlow: OrderStatus[] = [
         "new",
         "confirmed",
@@ -105,6 +116,36 @@
 
     function getStatusIndex(status: string): number {
         return statusFlow.indexOf(status as OrderStatus);
+    }
+
+    async function cancelOrder() {
+        if (!order) return;
+        cancelling = true;
+        cancelError = "";
+        try {
+            const res = await fetch("/api/orders/cancel", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ tracking_token: order.tracking_token }),
+            });
+            const data = await res.json();
+            if (!res.ok) {
+                cancelError = data.error || $t("order.token.cancel.error");
+                return;
+            }
+            showCancelModal = false;
+            const { toast } = await import("svelte-sonner");
+            toast.success($t("order.token.cancel.success"));
+            if (data.refunded) {
+                toast.info($t("order.token.cancel.refunded"));
+            }
+            // Optimistically update UI (realtime will also sync)
+            order = { ...order, status: "cancelled" };
+        } catch {
+            cancelError = $t("order.token.cancel.error");
+        } finally {
+            cancelling = false;
+        }
     }
 </script>
 
@@ -263,8 +304,58 @@
                 </div>
             </div>
         </div>
+        <!-- Cancel Order Button -->
+        {#if order.status !== "cancelled" && cancellableStatuses.includes(order.status as OrderStatus)}
+            <div class="cancel-section">
+                <button
+                    class="btn btn-danger-outline"
+                    onclick={() => {
+                        showCancelModal = true;
+                        cancelError = "";
+                    }}
+                >
+                    {$t("order.token.cancel")}
+                </button>
+            </div>
+        {/if}
     {/if}
 </div>
+
+<!-- Cancel Confirmation Modal -->
+{#if showCancelModal}
+    <div class="modal-overlay" role="dialog" aria-modal="true">
+        <div class="modal-card glass">
+            <h3>{$t("order.token.cancel.confirm.title")}</h3>
+            <p>{$t("order.token.cancel.confirm.desc")}</p>
+            {#if order?.payment_method === "online" && order?.payment_status === "paid"}
+                <p class="refund-notice">
+                    {$t("order.token.cancel.confirm.refund")}
+                </p>
+            {/if}
+            {#if cancelError}
+                <p class="cancel-error">{cancelError}</p>
+            {/if}
+            <div class="modal-actions">
+                <button
+                    class="btn btn-outline"
+                    onclick={() => (showCancelModal = false)}
+                    disabled={cancelling}
+                >
+                    {$t("order.token.cancel.confirm.no")}
+                </button>
+                <button
+                    class="btn btn-danger"
+                    onclick={cancelOrder}
+                    disabled={cancelling}
+                >
+                    {cancelling
+                        ? $t("order.token.cancel.cancelling")
+                        : $t("order.token.cancel.confirm.yes")}
+                </button>
+            </div>
+        </div>
+    </div>
+{/if}
 
 <style>
     .tracking-page {
@@ -428,5 +519,103 @@
         .status-steps {
             gap: var(--space-1);
         }
+    }
+
+    /* ── Cancel Order ───────────────────────────────────── */
+    .cancel-section {
+        margin-top: var(--space-8);
+        display: flex;
+        justify-content: center;
+    }
+
+    .btn-danger-outline {
+        padding: var(--space-3) var(--space-6);
+        border: 1.5px solid var(--color-danger);
+        color: var(--color-danger);
+        background: transparent;
+        border-radius: var(--radius-full);
+        font-size: var(--text-sm);
+        font-weight: var(--weight-semibold);
+        cursor: pointer;
+        transition:
+            background var(--transition-fast),
+            color var(--transition-fast);
+    }
+    .btn-danger-outline:hover {
+        background: rgba(230, 57, 70, 0.08);
+    }
+
+    .btn-danger {
+        padding: var(--space-3) var(--space-6);
+        background: var(--color-danger);
+        color: #fff;
+        border: none;
+        border-radius: var(--radius-full);
+        font-size: var(--text-sm);
+        font-weight: var(--weight-semibold);
+        cursor: pointer;
+        transition: opacity var(--transition-fast);
+    }
+    .btn-danger:disabled,
+    .btn-danger-outline:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+    .btn-danger:hover:not(:disabled) {
+        opacity: 0.88;
+    }
+
+    /* ── Modal ──────────────────────────────────────────── */
+    .modal-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.6);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 9999;
+        padding: var(--space-6);
+        backdrop-filter: blur(4px);
+    }
+
+    .modal-card {
+        max-width: 420px;
+        width: 100%;
+        padding: var(--space-8);
+        border-radius: var(--radius-2xl);
+        border: 1px solid var(--color-border);
+    }
+
+    .modal-card h3 {
+        font-size: var(--text-xl);
+        font-weight: var(--weight-bold);
+        margin-bottom: var(--space-3);
+    }
+
+    .modal-card p {
+        color: var(--color-text-secondary);
+        font-size: var(--text-sm);
+        margin-bottom: var(--space-3);
+    }
+
+    .refund-notice {
+        background: rgba(59, 130, 246, 0.1);
+        color: var(--color-info);
+        border-radius: var(--radius-md);
+        padding: var(--space-3) var(--space-4);
+        font-size: var(--text-sm) !important;
+        font-weight: var(--weight-medium);
+    }
+
+    .cancel-error {
+        color: var(--color-danger) !important;
+        font-size: var(--text-sm) !important;
+    }
+
+    .modal-actions {
+        display: flex;
+        gap: var(--space-3);
+        justify-content: flex-end;
+        margin-top: var(--space-6);
     }
 </style>

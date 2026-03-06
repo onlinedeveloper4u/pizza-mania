@@ -24,7 +24,7 @@ const transporter = nodemailer.createTransport({
     logger: true
 });
 
-const defaultFrom = `"${env.EMAIL_FROM || 'Pizza Mania'}" <${env.SMTP_USER}>`;
+const defaultFrom = `"${env.EMAIL_FROM || 'Pizza Mania'}" <${env.SMTP_FROM_USER}>`;
 
 // HTML email template wrapper
 function getEmailTemplate(title: string, content: string) {

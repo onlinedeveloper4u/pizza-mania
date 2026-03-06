@@ -45,6 +45,15 @@ export const PATCH: RequestHandler = async ({ request, params, cookies, url }) =
 
         const previousStatus = oldOrder?.status;
 
+        // Prevent cancellation once the order is in "preparing" or a later stage
+        const nonCancellableStatuses = ['preparing', 'ready', 'out_for_delivery', 'delivered', 'picked_up', 'served'];
+        if (newStatus === 'cancelled' && nonCancellableStatuses.includes(previousStatus ?? '')) {
+            return json(
+                { error: 'Order cannot be cancelled once it is being prepared or later.' },
+                { status: 422 }
+            );
+        }
+
         const isTerminalStatus = ['delivered', 'picked_up', 'served'].includes(newStatus);
         const updateData: Record<string, unknown> = { status: newStatus as OrderStatus };
         if (isTerminalStatus) {
