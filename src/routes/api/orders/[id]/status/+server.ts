@@ -11,9 +11,9 @@ export const PATCH: RequestHandler = async ({ request, params, cookies, url }) =
 
     try {
         const supabase = createServerClient(cookies);
-        const { data: { session } } = await supabase.auth.getSession();
+        const { data: { user }, error } = await supabase.auth.getUser();
 
-        if (!session) {
+        if (error || !user) {
             return json({ error: 'Unauthorized' }, { status: 401 });
         }
 
@@ -21,7 +21,7 @@ export const PATCH: RequestHandler = async ({ request, params, cookies, url }) =
         const { data: profile } = await supabase
             .from('profiles')
             .select('role')
-            .eq('id', session.user.id)
+            .eq('id', user.id)
             .single();
 
         if (!profile || !['manager', 'chef'].includes(profile.role)) {
@@ -89,7 +89,7 @@ export const PATCH: RequestHandler = async ({ request, params, cookies, url }) =
         await adminSupabase.from('order_status_history').insert({
             order_id: id,
             status: newStatus as OrderStatus,
-            changed_by: session.user.id,
+            changed_by: user.id,
         });
 
         // 3. Send email update (Smart logic inside function)
